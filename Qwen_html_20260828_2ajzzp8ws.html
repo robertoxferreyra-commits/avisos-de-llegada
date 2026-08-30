@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evergreen TEUs Portal · XLSX Converter + Dashboard + Aviso de Llegada</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/montserrat@latest/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@latest/index.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root{
+  --eg:#009343; --eg-dark:#00723C; --eg-deep:#004B23;
+  --lime:#8CC63F; --pale:#EAF6E3; --pale2:#DFF2D2; --total:#C9F0A8;
+  --ink:#1E2B23; --muted:#5B6B60; --bg:#F5FAF3; --card:#fff; --line:#D8E8D2;
+  --shadow:0 10px 30px rgba(0,75,35,.10); --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+h1,h2,h3{font-family:'Montserrat',sans-serif}
+header{background:linear-gradient(120deg,var(--eg-deep),var(--eg-dark) 45%,var(--eg));color:#fff;padding:22px 28px;position:relative;overflow:hidden}
+header::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 90px,rgba(255,255,255,.05) 90px 94px);pointer-events:none}
+.header-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:relative;z-index:1}
+.logo-box{width:50px;height:50px;border-radius:12px;background:#fff;display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.25);flex:0 0 auto}
+.logo-box svg{width:32px;height:32px}
+.brand-line small{display:block;font-size:10px;letter-spacing:3px;color:var(--total);font-weight:700}
+.brand-line h1{font-size:20px;font-weight:800}
+main{max-width:1400px;margin:0 auto;padding:26px 18px 60px;display:flex;flex-direction:column;gap:22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;animation:fadeUp .5s ease both}
+.card-head{background:var(--eg);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.card-head .num{background:#fff;color:var(--eg-deep);font-weight:800;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-family:'Montserrat';font-size:14px;flex:0 0 auto}
+.card-head h2{font-size:15px;font-weight:700;letter-spacing:.4px}
+.card-body{padding:20px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.guide{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-bottom:16px}
+.g-step{border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,#fff,var(--pale));padding:14px;font-size:12.5px;color:var(--muted);line-height:1.5}
+.g-step b{display:block;color:var(--eg-dark);font-size:12px;margin-bottom:4px;letter-spacing:.5px}
+.dropzone{border:2px dashed var(--lime);border-radius:12px;background:var(--pale);padding:34px 18px;text-align:center;cursor:pointer;transition:all .25s}
+.dropzone:hover,.dropzone.drag{background:var(--pale2);border-color:var(--eg)}
+.dropzone .icon{font-size:40px;display:block;margin-bottom:8px}
+.dropzone h3{color:var(--eg-dark);font-size:15px;margin-bottom:4px}
+.dropzone p{color:var(--muted);font-size:12px}
+.btn{border:none;cursor:pointer;border-radius:999px;font-weight:700;font-size:12.5px;padding:9px 18px;transition:transform .15s,box-shadow .2s,background .2s;display:inline-flex;align-items:center;gap:7px}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn-primary{background:var(--eg);color:#fff;box-shadow:0 6px 16px rgba(0,147,67,.35)}
+.btn-primary:hover{background:var(--eg-dark)}
+.btn-lime{background:var(--lime);color:var(--eg-deep)}
+.btn-lime:hover{background:#7ab332}
+.btn-ghost{background:#fff;color:var(--eg-dark);border:1.5px solid var(--eg)}
+.btn-ghost:hover{background:var(--pale)}
+.drop-actions{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.toolbar{display:none;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.toolbar.visible{display:flex}
+.file-chip{background:var(--eg-deep);color:#fff;font-size:12px;font-weight:700;padding:8px 14px;border-radius:999px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sel{padding:9px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px;font-weight:600;color:var(--eg-deep);outline:none;max-width:200px}
+.sel:focus{border-color:var(--eg)}
+.spacer{flex:1}
+.view-toggle{display:flex;border:1px solid var(--eg);border-radius:999px;overflow:hidden;flex-wrap:wrap}
+.view-toggle button{border:none;background:#fff;color:var(--eg-dark);font-weight:700;font-size:12px;padding:9px 14px;cursor:pointer}
+.view-toggle button.active{background:var(--eg);color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.kpi{border:1px solid var(--line);border-radius:12px;padding:14px;background:linear-gradient(180deg,#fff,var(--pale));position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--eg)}
+.kpi small{display:block;font-size:10px;letter-spacing:1.5px;color:var(--muted);font-weight:700;margin-bottom:6px}
+.kpi .val{font-family:'Montserrat';font-size:24px;font-weight:800;color:var(--eg-deep)}
+.kpi .sub{font-size:11px;color:var(--muted);margin-top:3px}
+.grid-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:16px}
+.panel{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.panel-head{background:var(--lime);color:var(--eg-deep);font-family:'Montserrat';font-weight:800;font-size:12px;letter-spacing:1.2px;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.panel-body{padding:14px;display:flex;flex-direction:column;gap:12px}
+.chart-box{position:relative;height:280px}
+.chart-box.small{height:230px}
+.table-wrap{border:1px solid var(--line);border-radius:10px;overflow-x:auto;overflow-y:visible}
+table{border-collapse:collapse;width:100%;font-size:11.5px;background:#fff}
+thead th{background:var(--eg);color:#fff;font-family:'Montserrat';font-size:10.5px;letter-spacing:.6px;padding:8px 10px;text-align:left;white-space:nowrap}
+tbody td{padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap;max-width:340px;overflow:hidden;text-overflow:ellipsis}
+tbody tr:nth-child(even){background:var(--pale)}
+tbody tr:hover{background:var(--total)}
+tr.tot td{background:var(--total);font-weight:800;color:var(--eg-deep);border-top:2px solid var(--eg)}
+.data-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.search-box{flex:1;min-width:160px;position:relative}
+.search-box input{width:100%;padding:9px 12px 9px 32px;border:1px solid var(--line);border-radius:999px;font-size:12px;outline:none}
+.search-box input:focus{border-color:var(--eg)}
+.search-box::before{content:"🔍";position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.6}
+.tabs{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.tab{padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer}
+.tab.active{background:var(--eg);border-color:var(--eg);color:#fff}
+.stats{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.stat{background:var(--pale2);border:1px solid var(--lime);color:var(--eg-deep);border-radius:9px;padding:5px 12px;font-size:11px;font-weight:700}
+.table-wrap thead th{cursor:pointer;user-select:none}
+.table-wrap thead th:hover{background:var(--eg-dark)}
+.arrow{color:var(--total);margin-left:5px}
+.status{margin-top:10px;font-size:12px;font-weight:600;min-height:16px}
+.status.ok{color:var(--eg)} .status.err{color:#B3261E}
+.pct-badge{background:var(--eg-deep);color:#fff;border-radius:999px;padding:4px 12px;font-size:11px;font-weight:800}
+.badge{border-radius:999px;padding:3px 10px;font-size:10px;font-weight:800;letter-spacing:.4px}
+.badge.ok{background:var(--total);color:var(--eg-deep);border:1px solid var(--eg)}
+.badge.warn{background:#FFF3CD;color:#8a6300;border:1px solid #d9b945}
+.badge.bad{background:#FDEcea;color:#B3261E;border:1px solid #e57368}
+.clause-note{background:var(--pale2);border:1px solid var(--lime);border-left:5px solid var(--eg);color:var(--eg-deep);font-weight:700;letter-spacing:.4px;font-size:12px;padding:10px 16px;border-radius:10px;margin-bottom:14px}
+.bl-input{flex:1;min-width:200px;padding:10px 16px;border:1.5px solid var(--line);border-radius:999px;font-size:13px;font-weight:700;letter-spacing:1px;outline:none;color:var(--eg-deep)}
+.bl-input:focus{border-color:var(--eg)}
+#printStage{position:fixed;left:-12000px;top:0;width:794px;background:#fff}
+footer{text-align:center;padding:20px;font-size:11.5px;color:var(--muted)}
+footer b{color:var(--eg-dark)}
+@media(max-width:760px){.grid-charts{grid-template-columns:1fr}}
+</style>
+<style id="avisoCss">
+/* ===== AVISO DE LLEGADA · 1 HOJA A4 EXACTA (sin recortes) ===== */
+#avisoPage{
+  background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;
+  width:100%;max-width:794px;height:1120px;overflow:hidden;
+  padding:14px 22px 12px 22px;box-sizing:border-box;
+  font-size:10px;line-height:1.35;
+  display:flex;flex-direction:column;
+}
+#avisoPage, #avisoPage *{page-break-inside:avoid;}
+.doc-header{display:flex;align-items:center;gap:6mm;margin:0 0 4mm}
+.doc-header .lg{width:24mm;height:24mm;flex:0 0 auto}
+.doc-header .lg svg{width:100%;height:100%;display:block}
+.doc-header .ht{text-align:left}
+.agent{font-size:10px;margin-bottom:1mm}
+.everline{color:#009343;font-weight:900;font-size:24px;letter-spacing:1px;line-height:1.08;font-family:Arial,Helvetica,sans-serif}
+.everbol{font-size:12px;margin-top:1mm}
+#avisoPage h1{text-align:center;font-size:13px;letter-spacing:3px;margin:2mm 0 3mm;font-family:Arial,Helvetica,sans-serif}
+.consignee{font-weight:bold;font-size:10px;margin:0 0 2mm}
+#avisoPage p{margin:1.2mm 0}
+.lbl{font-weight:bold}
+.green{font-weight:bold}
+/* Fila BL / POD / Nave en grid para que NUNCA se corte */
+.flex-row{display:grid;grid-template-columns:22% 38% 40%;align-items:center;gap:6px;font-weight:bold;margin:4px 0;font-size:9px}
+.flex-row .fl{text-align:left;white-space:normal;word-break:break-word}
+.flex-row .fc{text-align:center;white-space:normal}
+.flex-row .fr{text-align:right;white-space:normal;word-break:break-word}
+.row-feeder{display:grid;grid-template-columns:22% 38% 40%;align-items:center;gap:6px;font-weight:bold;margin:4px 0;font-size:9px}
+.row-feeder .l{text-align:left}
+.row-feeder .c{text-align:center;white-space:normal}
+.row-feeder .r{text-align:right;white-space:normal;word-break:break-word}
+.vertical-equip{text-align:center;font-weight:bold;margin:2mm 0}
+.vertical-equip div{margin:0.4mm 0}
+.aviso-doc p.detalle,.detalle{margin:1mm 0 0.8mm}
+.tbl-rec{width:100%;border-collapse:collapse;border:2px solid #000;margin:5px 0;table-layout:fixed;page-break-inside:avoid}
+.tbl-rec th{background:#009944;color:#fff;border:1px solid #000;padding:3px 2px;text-align:center;font-size:8px;font-weight:bold;white-space:normal;word-wrap:break-word}
+.tbl-rec td{border:1px solid #000;padding:3px 2px;text-align:center;vertical-align:middle;word-wrap:break-word;overflow-wrap:break-word;white-space:normal;background:#fff}
+.tbl-rec td.b{font-weight:bold}
+.tbl-rec td.r{text-align:right;padding-right:4px;font-weight:bold;white-space:nowrap}
+.tbl-rec td.bank{font-weight:bold;vertical-align:middle;text-align:center;line-height:1.3;background:#fff;font-size:8px;overflow-wrap:anywhere;word-break:normal}
+.tbl-sobr{width:72%;margin:2mm auto;border-collapse:collapse;border:2px solid #000;table-layout:fixed;page-break-inside:avoid}
+.tbl-sobr th{background:#009944;color:#fff;border:1px solid #000;padding:3px;text-align:center;font-size:8px}
+.tbl-sobr td{border:1px solid #000;padding:3px;text-align:center;font-size:8px}
+.notes{font-size:8.5px;margin:1mm 0}
+.foot-final{margin-top:auto;font-size:8.5px;border-top:1px solid #000;padding-top:2mm;text-align:center}
+</style>
+<style id="aviso-pdf-fix-css">
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  /* Hidden export stage */
+  .aviso-pdf-stage {
+    position: absolute !important;
+    left: -10000px !important;
+    top: 0 !important;
+    width: 794px !important; /* A4 width at 96dpi */
+    background: #ffffff !important;
+    pointer-events: none !important;
+  }
+
+  .aviso-pdf-stage,
+  .aviso-pdf-stage * {
+    box-sizing: border-box !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* The cloned Aviso sheet that will be exported */
+  .aviso-pdf-sheet {
+    width: 794px !important;
+    max-width: 794px !important;
+    min-height: 1123px !important; /* A4 height at 96dpi */
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  /* Hide interactive elements in the PDF clone */
+  .aviso-pdf-sheet button,
+  .aviso-pdf-sheet select,
+  .aviso-pdf-sheet input,
+  .aviso-pdf-sheet textarea,
+  .aviso-pdf-sheet .no-print,
+  .aviso-pdf-sheet .no-pdf {
+    display: none !important;
+  }
+
+  /* Keep tables controlled */
+  .aviso-pdf-sheet table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+  }
+
+  .aviso-pdf-sheet th,
+  .aviso-pdf-sheet td {
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .aviso-pdf-stage img {
+    max-width: 100% !important;
+  }
+
+  /* Optional print support */
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+
+    #aviso-a4,
+    #aviso-a4 *,
+    [data-aviso-pdf],
+    [data-aviso-pdf] * {
+      visibility: visible;
+    }
+
+    #aviso-a4,
+    [data-aviso-pdf] {
+      position: absolute !important;
+      left: 0 !important;
+      top: 0 !important;
+      width: 210mm !important;
+      max-width: 210mm !important;
+      margin: 0 !important;
+      box-shadow: none !important;
+      transform: none !important;
+      zoom: 1 !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo-box"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="9" width="20" height="10" rx="1.5" fill="#009343"/><path d="M5 9V6.5A1.5 1.5 0 0 1 6.5 5h11A1.5 1.5 0 0 1 19 6.5V9" stroke="#004B23" stroke-width="1.6"/><path d="M7 12v4M12 12v4M17 12v4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+    <div class="brand-line"><small>PORTAL LOGÍSTICO · TEUs</small><h1>Convertidor XLSX + Dashboard + Aviso de Llegada</h1></div>
+  </div>
+</header>
+
+<main>
+
+  <section class="card" id="uploadCard">
+    <div class="card-head"><span class="num">1</span><h2>SUBIR ARCHIVO · CUALQUIER PERSONA PUEDE USARLO</h2></div>
+    <div class="card-body">
+      <div class="guide">
+        <div class="g-step"><b>① SUBE TU XLSX</b>Hoja "Base" con IR, POD, POL, 20SD/40SD/40SH, A/C, Nave, Feeder, arribos, Emisión y Onward Routing.</div>
+        <div class="g-step"><b>② DASHBOARD AUTOMÁTICO</b>KPIs, MONTH SUMMARY, POD SUMMARY, semanas W21→W53, CARGO BY POL, TEUs por puerto y SERVICE BREAKDOWN.</div>
+        <div class="g-step"><b>③ AVISO DE LLEGADA</b>PDF en UNA sola hoja A4, sin recortes: columnas bancarias completas y nave visible.</div>
+        <div class="g-step"><b>④ FILTROS Y DATOS</b>POD, Servicio, Destino (A/C), Mes y Nave/Viaje · vista ordenable y validación de cláusula.</div>
+      </div>
+      <div class="dropzone" id="dropZone">
+        <span class="icon">📦</span>
+        <h3>Arrastra tu archivo XLSX aquí</h3>
+        <p>o haz clic para seleccionarlo · formatos .xlsx / .xls / .xlsm</p>
+        <div class="drop-actions"><span class="btn btn-primary">📂 Seleccionar archivo</span></div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.xlsm" hidden>
+      </div>
+      <div class="status" id="statusBox"></div>
+    </div>
+  </section>
+
+  <section class="card" id="appCard" style="display:none">
+    <div class="card-head"><span class="num">2</span><h2>RESULTADOS · DASHBOARD, DATOS Y AVISO DE LLEGADA</h2></div>
+    <div class="card-body">
+      <div class="toolbar visible">
+        <span class="file-chip" id="fileChip">—</span>
+        <select class="sel" id="selPOD"></select>
+        <select class="sel" id="selServ"></select>
+        <select class="sel" id="selDest"></select>
+        <select class="sel" id="selMonth"></select>
+        <select class="sel" id="selVessel"></select>
+        <div class="view-toggle">
+          <button id="viewDashBtn" class="active">📊 Dashboard</button>
+          <button id="viewVesselBtn">🚢 Nave / Viaje</button>
+          <button id="viewDataBtn">🗂 Datos (ordenar)</button>
+          <button id="viewOnwardBtn">🛣️ Cláusula Onward</button>
+          <button id="viewAvisoBtn">📄 Aviso de Llegada</button>
+        </div>
+        <span class="spacer"></span>
+        <button class="btn btn-primary" id="btnSummary">⬇ Resumen Excel</button>
+        <button class="btn btn-ghost" id="btnReset">✕ Nuevo</button>
+      </div>
+
+      <div id="dashView">
+        <div class="kpis" id="kpiBox"></div>
+        <div class="grid-charts">
+          <div class="panel"><div class="panel-head">MONTH SUMMARY · CONTENEDORES</div>
+            <div class="panel-body"><div class="table-wrap" id="monthTableBox"></div><div class="chart-box"><canvas id="monthCanvas"></canvas></div></div></div>
+          <div class="panel"><div class="panel-head">POD SUMMARY · ARICA vs IQUIQUE</div>
+            <div class="panel-body"><div class="table-wrap" id="podTableBox"></div><div class="chart-box"><canvas id="podCanvas"></canvas></div></div></div>
+          <div class="panel"><div class="panel-head">ETA POD — WEEKLY SUMMARY</div>
+            <div class="panel-body"><div class="table-wrap" id="weekTableBox"></div><div class="chart-box"><canvas id="weekCanvas"></canvas></div></div></div>
+          <div class="panel"><div class="panel-head">WEEKLY SUMMARY · POR TIPO (20/40)</div>
+            <div class="panel-body"><div class="table-wrap" id="weekTypeTableBox"></div><div class="chart-box"><canvas id="weekTypeCanvas"></canvas></div></div></div>
+          <div class="panel"><div class="panel-head">CARGO BY POL <span class="pct-badge" id="fePctBadge">—</span></div>
+            <div class="panel-body"><div class="chart-box small"><canvas id="polDonut"></canvas></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="table-wrap" id="feTableBox"></div>
+                <div class="table-wrap" id="wsTableBox"></div>
+              </div></div></div>
+          <div class="panel"><div class="panel-head">TEUs POR PUERTO DE ARRIBO (20'=1 · 40'=2)</div>
+            <div class="panel-body"><div class="table-wrap" id="teuTableBox"></div><div class="chart-box small"><canvas id="teuCanvas"></canvas></div></div></div>
+          <div class="panel"><div class="panel-head">SERVICE BREAKDOWN · IQUIQUE → ARICA</div>
+            <div class="panel-body"><div class="table-wrap" id="servTableBox"></div><div class="chart-box small"><canvas id="servCanvas"></canvas></div></div></div>
+          <div class="panel"><div class="panel-head">VESSEL &amp; VOYAGE BREAKDOWN</div>
+            <div class="panel-body"><div class="table-wrap" id="vslTableBox"></div><div class="chart-box small"><canvas id="vslCanvas"></canvas></div></div></div>
+        </div>
+      </div>
+
+      <div id="vesselView" style="display:none">
+        <div class="clause-note">🚢 Detalle por NAVE / VIAJE (VSLVOY) con contenedores, TEUs y BL/IR.</div>
+        <div class="table-wrap" id="vesselFullBox"></div>
+      </div>
+
+      <div id="onwardView" style="display:none">
+        <div class="clause-note">🛣️ CLAUSE VALIDATION: ONWARD INLAND ROUTING — contenedores destino BOLIVIA deben incluir "CARGO IN TRANSIT TO BOLIVIA…".</div>
+        <div class="stats" id="onwardStats"></div>
+        <div class="table-wrap" id="onwardBox"></div>
+      </div>
+
+      <div id="avisoView" style="display:none">
+        <div class="clause-note">📄 AVISO DE LLEGADA — PDF en UNA hoja A4, sin recortes. Escribe el BL o genera masivo por NAVE (ZIP).</div>
+        <div class="data-tools">
+          <input class="bl-input" id="blInput" list="blList" placeholder="N° DE BL · ej. 140601147622" autocomplete="off">
+          <datalist id="blList"></datalist>
+          <select class="sel" id="selNaveAviso" style="max-width:260px"></select>
+          <button class="btn btn-primary" id="btnGenAviso">⚙️ Generar</button>
+          <button class="btn btn-lime" id="btnPdfAviso" style="display:none" onclick="avisoPdfFix(event); return false;">⬇️ PDF</button>
+          <button class="btn btn-ghost" id="btnPrintAviso" style="display:none">🖨️ Imprimir</button>
+          <button class="btn btn-lime" id="btnZipAviso">📦 ZIP masivo</button>
+        </div>
+        <div class="status" id="avisoStatus"></div>
+        <div id="avisoWrap" style="display:none;margin-top:14px;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:auto;background:#fff"><div id="avisoPage"></div></div>
+      </div>
+
+      <div id="dataView" style="display:none">
+        <div class="data-tools">
+          <div class="search-box"><input type="text" id="searchInput" placeholder="Filtrar celdas…"></div>
+          <button class="btn btn-primary" id="btnSorted">⬇ Descargar tabla ordenada</button>
+        </div>
+        <div class="tabs" id="tabsBox"></div>
+        <div class="stats" id="statsBox"></div>
+        <div class="table-wrap" id="tableWrap"><table><thead id="theadBox"></thead><tbody id="tbodyBox"></tbody></table></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Flujo <b>Reporte SISTEMA → Dashboard TEUs → Aviso de Llegada PDF (1 hoja A4)</b> · Paleta Evergreen.</footer>
+
+<script>
+(function(){
+"use strict";
+var MESES=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+var POD_COLORS=["#009343","#8CC63F","#004B23","#C9F0A8","#00723C","#5B8C2A"];
+var state={sheets:{},order:[],baseSheet:null,records:[],fileName:"",
+  d:{active:null,sortCol:0,sortDir:1,term:"",view:[]},
+  f:{pod:"__all",serv:"__all",dest:"__all",month:"__all",vessel:"__all"}};
+var charts={};
+function $(id){return document.getElementById(id);}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function isNum(v){return typeof v==="number"||(typeof v==="string"&&v.trim()!==""&&!isNaN(Number(v)));}
+function toNum(v){return isNum(v)?Number(v):0;}
+function pad2(n){return String(n).padStart(2,"0");}
+function normYear(y){y=+y;if(y<100)y+=2000;return y;}
+function parseDate(v){
+  if(v instanceof Date&&!isNaN(v)){var yy=v.getFullYear();if(yy<100)return new Date(yy+2000,v.getMonth(),v.getDate());return v;}
+  if(typeof v==="number"&&v>20000&&v<80000){var du=new Date(Math.round((v-25569)*86400000));return new Date(du.getUTCFullYear(),du.getUTCMonth(),du.getUTCDate());}
+  if(typeof v==="string"){var s=v.trim(),m;
+    if(m=s.match(/^(\d{1,4})-(\d{1,2})-(\d{1,2})/))return new Date(normYear(m[1]),+m[2]-1,+m[3]);
+    if(m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{1,4})/))return new Date(normYear(m[3]),+m[2]-1,+m[1]);
+    var t=Date.parse(s);if(!isNaN(t))return new Date(t);}
+  return null;
+}
+function isoWeek(d){var dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));var dn=dt.getUTCDay()||7;dt.setUTCDate(dt.getUTCDate()+4-dn);var ys=new Date(Date.UTC(dt.getUTCFullYear(),0,1));return Math.ceil(((dt-ys)/86400000+1)/7);}
+function normServ(v){var s=String(v||"").trim().toUpperCase();if(!s)return "(SIN SERVICIO)";if(s==="FEEEDER")return "FEEDER";return s;}
+function normDest(ac){var s=String(ac||"").trim().toUpperCase();
+  if(s.indexOf("BO")===0)return "BOLIVIA";if(s.indexOf("CL")===0)return "CHILE";
+  if(s.indexOf("AE")===0||s.indexOf("AR")===0)return "ARGENTINA";if(s.indexOf("PE")===0)return "PERU";return "OTROS";}
+function setStatus(m,t){var b=$("statusBox");b.textContent=m||"";b.className="status "+(t||"");}
+function setAvisoStatus(m,t){var b=$("avisoStatus");b.textContent=m||"";b.className="status "+(t||"");}
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e;}
+
+var LOGO_SVG='<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">'
++'<g fill="none" stroke="#EE5622" stroke-width="3"><circle cx="100" cy="100" r="92"/>'
++'<ellipse cx="100" cy="100" rx="45" ry="92"/><ellipse cx="100" cy="100" rx="75" ry="92"/>'
++'<ellipse cx="100" cy="100" rx="92" ry="30"/><ellipse cx="100" cy="100" rx="92" ry="62"/>'
++'<line x1="8" y1="100" x2="192" y2="100"/><line x1="100" y1="8" x2="100" y2="192"/>'
++'<path d="M18 62 Q100 38 182 62"/><path d="M18 138 Q100 162 182 138"/></g>'
++'<polygon fill="#009343" points="100,12 105.4,87.1 128.3,71.7 112.9,94.6 168,100 112.9,105.4 128.3,128.3 105.4,112.9 100,188 94.6,112.9 71.7,128.3 87.1,105.4 32,100 87.1,94.6 71.7,71.7 94.6,87.1"/>'
++'<path id="egArc" d="M 32 128 A 74 74 0 0 0 170 128" fill="none"/>'
++'<text fill="#009343" font-family="Arial,Helvetica,sans-serif" font-weight="bold" font-size="21" letter-spacing="1"><textPath href="#egArc" xlink:href="#egArc" startOffset="50%" text-anchor="middle">EVERGREEN</textPath></text></svg>';
+
+$("dropZone").addEventListener("click",function(){$("fileInput").click();});
+$("dropZone").addEventListener("dragover",function(e){e.preventDefault();this.classList.add("drag");});
+$("dropZone").addEventListener("dragleave",function(){this.classList.remove("drag");});
+$("dropZone").addEventListener("drop",function(e){e.preventDefault();this.classList.remove("drag");if(e.dataTransfer.files.length)handleFile(e.dataTransfer.files[0]);});
+$("fileInput").addEventListener("change",function(){if(this.files.length)handleFile(this.files[0]);});
+function handleFile(file){
+  if(!/\.(xlsx|xls|xlsm)$/i.test(file.name)){setStatus("⚠ Formato no válido.","err");return;}
+  setStatus("Procesando "+file.name+" …");
+  var rd=new FileReader();
+  rd.onload=function(ev){try{var wb=XLSX.read(new Uint8Array(ev.target.result),{type:"array",cellDates:true});ingest(wb,file.name);}catch(err){setStatus("⚠ "+err.message,"err");}};
+  rd.readAsArrayBuffer(file);
+}
+function ingest(wb,fname){
+  state.sheets={};state.order=[];state.fileName=fname;
+  wb.SheetNames.forEach(function(nm){
+    var aoa=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,defval:""});
+    var clean=aoa.filter(function(r){return r.some(function(c){return c!==null&&String(c).trim()!=="";});});
+    if(!clean.length)return;
+    var hdr=clean[0].map(function(c,i){var t=String(c).trim();return t||("Col "+(i+1));});
+    var rows=clean.slice(1).filter(function(r){return String(r[0]).trim().toLowerCase()!==String(hdr[0]).trim().toLowerCase();});
+    state.sheets[nm]={header:hdr,rows:rows};state.order.push(nm);
+  });
+  if(!state.order.length){setStatus("⚠ Sin datos.","err");return;}
+  state.baseSheet=null;
+  state.order.forEach(function(nm){if(state.baseSheet)return;
+    var h=state.sheets[nm].header.map(function(x){return String(x).toLowerCase();});
+    if(h.indexOf("pod")>=0&&h.indexOf("20sd")>=0)state.baseSheet=nm;});
+  afterLoad();
+}
+function buildRecords(){
+  state.records=[];if(!state.baseSheet)return;
+  var sh=state.sheets[state.baseSheet];var H={};sh.header.forEach(function(h,i){H[String(h).toLowerCase()]=i;});
+  function col(row,key){var i=H[key];return i===undefined?"":row[i];}
+  sh.rows.forEach(function(row){
+    var pod=String(col(row,"pod")).trim().toUpperCase()||"SIN POD";
+    var eta=null;["eta pod","eta"].forEach(function(k){if(!eta&&H[k]!==undefined)eta=parseDate(row[H[k]]);});
+    if(!eta){var aa=parseDate(col(row,"arribo arica")),ai=parseDate(col(row,"arribo iquique"));eta=(pod==="ARICA"&&aa)?aa:(pod==="IQUIQUE"&&ai?ai:(aa||ai));}
+    var pol=String(col(row,"pol")).trim().toUpperCase()||"SIN POL";
+    var ac=String(col(row,"a/c")).trim().toUpperCase();
+    var vsl=String(col(row,"vslvoy")).trim().toUpperCase();
+    if(!vsl)vsl=(String(col(row,"nave principal")).trim()+" "+String(col(row,"viaje")).trim()).trim().toUpperCase();
+    state.records.push({ir:String(col(row,"bl")!==""?col(row,"bl"):col(row,"ir")),
+      cons:String(col(row,"consignatario")).trim(),pod:pod,pol:pol,serv:normServ(col(row,"servicio")),ac:ac,dest:normDest(ac),
+      c20:toNum(col(row,"20sd")),c40sd:toNum(col(row,"40sd")),c40sh:toNum(col(row,"40sh")),
+      nave:String(col(row,"nave principal")).trim(),viaje:String(col(row,"viaje")).trim(),
+      feeder:String(col(row,"feeder")).trim(),arrA:aa2(col(row,"arribo arica")),arrI:aa2(col(row,"arribo iquique")),eta:eta,
+      emis:String(col(row,"emision")).trim(),emisDest:String(col(row,"emision destino")).trim(),
+      onward:String(col(row,"onward inland routing")||""),trade:(pol.indexOf("BUENAVENTURA")>=0?"WS":"FE"),vsl:vsl||"(SIN NAVE)"});
+    function aa2(v){return parseDate(v);}
+  });
+}
+function cont(r){return r.c20+r.c40sd+r.c40sh;}
+function teus(r){return r.c20+(r.c40sd+r.c40sh)*2;}
+function monthKeyOf(d){return d.getFullYear()*12+d.getMonth();}
+function filteredRecords(){
+  return state.records.filter(function(r){
+    if(state.f.pod!=="__all"&&r.pod!==state.f.pod)return false;
+    if(state.f.serv!=="__all"&&r.serv!==state.f.serv)return false;
+    if(state.f.dest!=="__all"&&r.dest!==state.f.dest)return false;
+    if(state.f.vessel!=="__all"&&r.vsl!==state.f.vessel)return false;
+    if(state.f.month!=="__all"){if(state.f.month==="__transit"){if(r.eta)return false;}else if(!r.eta||String(monthKeyOf(r.eta))!==state.f.month)return false;}
+    return true;});
+}
+function aggregate(recs){
+  var months={},weeks={},pols={},ports={},servs={},vsls={};
+  recs.forEach(function(r){
+    var mk,wKey,y,m,w;
+    if(r.eta){y=r.eta.getFullYear();m=r.eta.getMonth();w=isoWeek(r.eta);mk=y*12+m;wKey=y*100+w;}else{mk=Infinity;wKey=Infinity;}
+    if(!months[mk])months[mk]={key:mk,y:y,m:m,c20:0,c40sd:0,c40sh:0,total:0,teu:0,bl:0,pods:{}};
+    if(!weeks[wKey])weeks[wKey]={key:wKey,y:y,w:w,c20:0,c40sd:0,c40sh:0,total:0,teu:0,bl:0,pods:{}};
+    [months[mk],weeks[wKey]].forEach(function(b){b.c20+=r.c20;b.c40sd+=r.c40sd;b.c40sh+=r.c40sh;b.total+=cont(r);b.teu+=teus(r);b.bl+=1;b.pods[r.pod]=(b.pods[r.pod]||0)+cont(r);});
+    if(!pols[r.pol])pols[r.pol]={pol:r.pol,trade:r.trade,c20:0,c40sd:0,c40sh:0};
+    pols[r.pol].c20+=r.c20;pols[r.pol].c40sd+=r.c40sd;pols[r.pol].c40sh+=r.c40sh;
+    if(!ports[r.pod])ports[r.pod]={pod:r.pod,c20:0,c40sd:0,c40sh:0};
+    ports[r.pod].c20+=r.c20;ports[r.pod].c40sd+=r.c40sd;ports[r.pod].c40sh+=r.c40sh;
+    var sk=r.pod+"|"+r.serv;
+    if(!servs[sk])servs[sk]={pod:r.pod,serv:r.serv,cont:0,teu:0,bl:0};
+    servs[sk].cont+=cont(r);servs[sk].teu+=teus(r);servs[sk].bl+=1;
+    if(!vsls[r.vsl])vsls[r.vsl]={vsl:r.vsl,c20:0,c40sd:0,c40sh:0,total:0,teu:0,bl:0,pods:{}};
+    vsls[r.vsl].c20+=r.c20;vsls[r.vsl].c40sd+=r.c40sd;vsls[r.vsl].c40sh+=r.c40sh;vsls[r.vsl].total+=cont(r);vsls[r.vsl].teu+=teus(r);vsls[r.vsl].bl+=1;
+    vsls[r.vsl].pods[r.pod]=(vsls[r.vsl].pods[r.pod]||0)+cont(r);
+  });
+  function vals(o){return Object.keys(o).map(function(k){return o[k];});}
+  var mArr=vals(months).sort(function(a,b){return a.key-b.key;});
+  var wArr=vals(weeks).sort(function(a,b){return a.key-b.key;});
+  var mY={},wY={};mArr.forEach(function(x){if(isFinite(x.key))mY[x.y]=1;});wArr.forEach(function(x){if(isFinite(x.key))wY[x.y]=1;});
+  var mMulti=Object.keys(mY).length>1,wMulti=Object.keys(wY).length>1;
+  mArr.forEach(function(x){x.label=isFinite(x.key)?(cap(MESES[x.m])+(mMulti?" '"+String(x.y).slice(2):"")):"In Transit";});
+  wArr.forEach(function(x){x.label=isFinite(x.key)?("W"+(x.w<10?"0":"")+x.w+(wMulti?"·"+String(x.y).slice(2):"")):"In Transit";});
+  return{months:mArr,weeks:wArr,
+    pols:vals(pols).sort(function(a,b){return (b.c20+b.c40sd+b.c40sh)-(a.c20+a.c40sd+a.c40sh);}),
+    ports:vals(ports),servs:vals(servs).sort(function(a,b){if(a.serv!==b.serv)return a.serv<b.serv?-1:1;var po=podOrd(a.pod)-podOrd(b.pod);if(po!==0)return po;return b.teu-a.teu;}),
+    vsls:vals(vsls).sort(function(a,b){return b.total-a.total;})};
+}
+function podOrd(p){p=String(p).toUpperCase();if(p==="IQUIQUE")return 0;if(p==="ARICA")return 1;return 2;}
+function makeTable(box,headers,rows,totals){
+  var t=el("table"),th=el("thead"),tr=el("tr");
+  headers.forEach(function(h){tr.appendChild(el("th",null,h));});
+  th.appendChild(tr);t.appendChild(th);
+  var tb=el("tbody");
+  rows.forEach(function(rw){var r2=el("tr");rw.forEach(function(c){r2.appendChild(el("td",null,String(c)));});tb.appendChild(r2);});
+  if(totals){var rt=el("tr","tot");totals.forEach(function(c){rt.appendChild(el("td",null,String(c)));});tb.appendChild(rt);}
+  t.appendChild(tb);box.innerHTML="";box.appendChild(t);
+}
+function setChart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart($(id),cfg);}
+var valueLabels={id:"valueLabels",afterDatasetsDraw:function(ch){var ctx=ch.ctx;ctx.save();ctx.font="700 10px Inter";ctx.fillStyle="#004B23";ctx.textAlign="center";
+  ch.data.datasets.forEach(function(ds,di){if(!ch.isDatasetVisible(di))return;var m=ch.getDatasetMeta(di);m.data.forEach(function(pt,i){var v=ds.data[i];if(typeof v==="number"&&v>0){ctx.fillText(String(v),pt.x,pt.y-4);}});});ctx.restore();}};
+var topTotals={id:"topTotals",afterDatasetsDraw:function(ch){var ctx=ch.ctx;ctx.save();ctx.font="800 11px Inter";ctx.fillStyle="#004B23";ctx.textAlign="center";
+  var m0=ch.getDatasetMeta(0);if(m0&&m0.data)m0.data.forEach(function(pt,i){var sum=0,top=Infinity;ch.data.datasets.forEach(function(ds,di){if(ch.isDatasetVisible(di)){var v=ds.data[i];if(typeof v==="number")sum+=v;var m2=ch.getDatasetMeta(di);if(m2.data[i])top=Math.min(top,m2.data[i].y);}});if(isFinite(top))ctx.fillText(String(sum),pt.x,top-6);});ctx.restore();}};
+Chart.defaults.font.family="Inter";Chart.defaults.color="#5B6B60";
+
+function refreshDashboard(){
+  var recs=filteredRecords(),agg=aggregate(recs);
+  var totC=0,totT=0,tot20=0,t40sd=0,t40sh=0,feC=0,wsC=0;
+  recs.forEach(function(r){totC+=cont(r);totT+=teus(r);tot20+=r.c20;t40sd+=r.c40sd;t40sh+=r.c40sh;if(r.trade==="FE")feC+=cont(r);else wsC+=cont(r);});
+  var tot40=t40sd+t40sh,pctFE=totC?((feC/totC)*100):0;
+  $("kpiBox").innerHTML="";
+  [["BL / IR",recs.length,"registros"],["CONTENEDORES",totC.toLocaleString("es"),"20'+40'"],["TEUs TOTALES",totT.toLocaleString("es"),"20'=1 · 40'=2"],
+   ["20'",tot20.toLocaleString("es"),"contenedores"],["40'",tot40.toLocaleString("es"),"SD+SH"],["% FE",pctFE.toFixed(2)+"%","vs Regional "+(totC?((wsC/totC)*100).toFixed(2):0)+"%"]]
+  .forEach(function(k){var d=el("div","kpi");d.appendChild(el("small",null,k[0]));d.appendChild(el("div","val",String(k[1])));d.appendChild(el("div","sub",k[2]));$("kpiBox").appendChild(d);});
+  $("fePctBadge").textContent=pctFE.toFixed(2)+"% FE · "+(totC?((wsC/totC)*100).toFixed(2):0)+"% Regional";
+  makeTable($("monthTableBox"),["Period","20SD","40SD","40SH","Total"],agg.months.map(function(mm){return[mm.label,mm.c20,mm.c40sd,mm.c40sh,mm.total];}),["GRAND TOTAL",tot20,t40sd,t40sh,totC]);
+  setChart("monthCanvas",{type:"bar",plugins:[topTotals],data:{labels:agg.months.map(function(mm){return mm.label;}),datasets:[
+    {label:"20SD",data:agg.months.map(function(mm){return mm.c20;}),backgroundColor:"#004B23"},
+    {label:"40SD",data:agg.months.map(function(mm){return mm.c40sd;}),backgroundColor:"#00723C"},
+    {label:"40SH",data:agg.months.map(function(mm){return mm.c40sh;}),backgroundColor:"#8CC63F"}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:"bottom"}}}});
+  var podNames=agg.ports.map(function(p){return p.pod;}).sort();
+  function podTotals(){return podNames.map(function(p){return agg.ports.reduce(function(s,x){return s+(x.pod===p?(x.c20+x.c40sd+x.c40sh):0);},0);});}
+  makeTable($("podTableBox"),["Period"].concat(podNames,["Total"]),agg.months.map(function(mm){return[mm.label].concat(podNames.map(function(p){return mm.pods[p]||0;}),[mm.total]);}),["GRAND TOTAL"].concat(podTotals(),[totC]));
+  setChart("podCanvas",{type:"bar",plugins:[valueLabels],data:{labels:agg.months.map(function(mm){return mm.label;}),datasets:podNames.map(function(p,i){return{label:p,data:agg.months.map(function(mm){return mm.pods[p]||0;}),backgroundColor:POD_COLORS[i%POD_COLORS.length]};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"}}}});
+  makeTable($("weekTableBox"),["Period"].concat(podNames,["Total"]),agg.weeks.map(function(w){return[w.label].concat(podNames.map(function(p){return w.pods[p]||0;}),[w.total]);}),["TOTAL"].concat(podTotals(),[totC]));
+  setChart("weekCanvas",{type:"bar",plugins:[valueLabels],data:{labels:agg.weeks.map(function(w){return w.label;}),datasets:[{label:"Total",data:agg.weeks.map(function(w){return w.total;}),backgroundColor:"#8CC63F",borderColor:"#009343",borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"top"}}}});
+  makeTable($("weekTypeTableBox"),["Period","20SD","40SD","40SH","Total"],agg.weeks.map(function(w){return[w.label,w.c20,w.c40sd,w.c40sh,w.total];}),["TOTAL",tot20,t40sd,t40sh,totC]);
+  setChart("weekTypeCanvas",{type:"bar",plugins:[topTotals],data:{labels:agg.weeks.map(function(w){return w.label;}),datasets:[
+    {label:"20SD",data:agg.weeks.map(function(w){return w.c20;}),backgroundColor:"#004B23"},
+    {label:"40SD",data:agg.weeks.map(function(w){return w.c40sd;}),backgroundColor:"#00723C"},
+    {label:"40SH",data:agg.weeks.map(function(w){return w.c40sh;}),backgroundColor:"#8CC63F"}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:"top"}}}});
+  var fe=agg.pols.filter(function(p){return p.trade==="FE";}),ws=agg.pols.filter(function(p){return p.trade==="WS";});
+  function polRows(l){return l.map(function(p){return[p.pol,p.c20,p.c40sd,p.c40sh];});}
+  function polTot(l){return["TOTAL",l.reduce(function(s,p){return s+p.c20;},0),l.reduce(function(s,p){return s+p.c40sd;},0),l.reduce(function(s,p){return s+p.c40sh;},0)];}
+  makeTable($("feTableBox"),["PORT (FE)","20SD","40SD","40SH"],polRows(fe),polTot(fe));
+  makeTable($("wsTableBox"),["PORT (WS/REG)","20SD","40SD","40SH"],polRows(ws),polTot(ws));
+  setChart("polDonut",{type:"doughnut",data:{labels:["FE "+feC,"Regional "+wsC],datasets:[{data:[feC,wsC],backgroundColor:["#009343","#8CC63F"],borderColor:"#fff",borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"right"}}}});
+  makeTable($("teuTableBox"),["Puerto arribo","Cont. 20'","Cont. 40'","Total TEUs"],agg.ports.map(function(p){var t40=p.c40sd+p.c40sh;return[p.pod,p.c20,t40,p.c20+t40*2];}),["TOTAL",tot20,tot40,totT]);
+  setChart("teuCanvas",{type:"bar",data:{labels:agg.ports.map(function(p){return p.pod;}),datasets:[{label:"TEUs",data:agg.ports.map(function(p){var t40=p.c40sd+p.c40sh;return p.c20+t40*2;}),backgroundColor:["#009343","#8CC63F","#004B23"]}]},options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}});
+  makeTable($("servTableBox"),["Puerto","Servicio","Cont.","TEUs","BL/IR"],agg.servs.map(function(s){return[s.pod,s.serv,s.cont,s.teu,s.bl];}),["TOTAL","",totC,totT,recs.length]);
+  var servNames=[];agg.servs.forEach(function(s){if(servNames.indexOf(s.serv)===-1)servNames.push(s.serv);});
+  var servPods=agg.servs.map(function(s){return s.pod;}).filter(function(v,i,a){return a.indexOf(v)===i;}).sort(function(a,b){return podOrd(a)-podOrd(b)||String(a).localeCompare(String(b));});
+  setChart("servCanvas",{type:"bar",data:{labels:servNames,datasets:servPods.map(function(p,i){return{label:p,data:servNames.map(function(sv){var f=agg.servs.filter(function(x){return x.serv===sv&&x.pod===p;});return f.length?f[0].teu:0;}),backgroundColor:POD_COLORS[i%POD_COLORS.length]};})},options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:"bottom"}}}});
+  makeTable($("vslTableBox"),["VSLVOY","20SD","40SD","40SH","Total","TEUs","BL/IR"],agg.vsls.map(function(v){return[v.vsl,v.c20,v.c40sd,v.c40sh,v.total,v.teu,v.bl];}),["TOTAL",tot20,t40sd,t40sh,totC,totT,recs.length]);
+  var topV=agg.vsls.slice(0,12);
+  setChart("vslCanvas",{type:"bar",plugins:[valueLabels],data:{labels:topV.map(function(v){return v.vsl;}),datasets:[{label:"Cont.",data:topV.map(function(v){return v.total;}),backgroundColor:"#8CC63F"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+}
+function refreshVessel(){
+  var agg=aggregate(filteredRecords());
+  var rows=agg.vsls.map(function(v){return[v.vsl,Object.keys(v.pods).sort().join(", "),v.c20,v.c40sd,v.c40sh,v.total,v.teu,v.bl];});
+  var tot=rows.reduce(function(a,r){return[a[0]+r[2],a[1]+r[3],a[2]+r[4],a[3]+r[5],a[4]+r[6],a[5]+r[7]];},[0,0,0,0,0,0]);
+  makeTable($("vesselFullBox"),["VSLVOY","PODs","20SD","40SD","40SH","Total","TEUs","BL/IR"],rows,["TOTAL","",tot[0],tot[1],tot[2],tot[3],tot[4],tot[5]]);
+}
+function clauseStatus(t){var s=String(t||"").toUpperCase().replace(/\s+/g," ").trim();if(!s)return{txt:"✖ MISSING",cls:"bad"};
+  var ok=s.indexOf("CARGO IN TRANSIT TO BOLIVIA")!==-1||s.indexOf("CARGA EN TRANSITO A BOLIVIA")!==-1||s.indexOf("TRANSIT TO BOLIVIA")!==-1;
+  return ok?{txt:"✔ CLAUSE PRESENT",cls:"ok"}:{txt:"⚠ REVIEW REQUIRED",cls:"warn"};}
+function refreshOnward(){
+  var recs=filteredRecords().filter(function(r){return r.dest==="BOLIVIA";});
+  var okN=0,warnN=0,badN=0;
+  var rows=recs.map(function(r){var st=clauseStatus(r.onward);if(st.cls==="ok")okN++;else if(st.cls==="warn")warnN++;else badN++;
+    return[r.ir||"—",r.vsl,r.pod,r.ac||"—",r.dest,r.onward||"(vacío)",st];});
+  $("onwardStats").innerHTML="";
+  [["BLs BOLIVIA: "+recs.length],["✔ "+okN],["⚠ "+warnN],["✖ "+badN]].forEach(function(s){$("onwardStats").appendChild(el("span","stat",s[0]));});
+  var box=$("onwardBox");box.innerHTML="";
+  var t=el("table"),th=el("thead"),tr=el("tr");
+  ["BL / IR","Vessel / Voyage","POD","A/C","Destino","Onward Inland Routing","Status"].forEach(function(h){tr.appendChild(el("th",null,h));});
+  th.appendChild(tr);t.appendChild(th);
+  var tb=el("tbody");
+  rows.forEach(function(rw){var r2=el("tr");for(var i=0;i<6;i++){var td=el("td",null,String(rw[i]));td.title=String(rw[i]);r2.appendChild(td);}
+    var tdB=el("td");tdB.appendChild(el("span","badge "+rw[6].cls,rw[6].txt));r2.appendChild(tdB);tb.appendChild(r2);});
+  t.appendChild(tb);box.appendChild(t);
+}
+
+/* ===== AVISO DE LLEGADA ===== */
+function polLabel(p){p=String(p||"").trim();
+  if(/CHINA$/i.test(p))return p.replace(/,?\s*CHINA$/i,"")+",(CN)";
+  var cn=["SHANGHAI","QINGDAO","NINGBO","YANTIAN","NANSHA","XINGANG","LIANYUNGANG","XIAMEN","DALIAN","KAOHSIUNG","FUZHOU","HONG KONG"];
+  if(cn.indexOf(p.toUpperCase())>=0)return p+",(CN)";
+  if(/^BUENAVENTURA/i.test(p))return p+" (CO)";if(/^PUSAN/i.test(p))return p+",(KR)";if(/^(SEMARANG|JAKARTA)/i.test(p))return p+",(ID)";
+  return p;}
+function buildAviso(r){
+  var n20=r.c20,n40sd=r.c40sd,n40sh=r.c40sh,n40=n40sd+n40sh;
+  var thc=160*n20+230*n40,vbF=120*n20+200*n40,vbD=150*n20+200*n40,adm=60*n20+120*n40;
+  var arr=(r.pod==="ARICA"?r.arrA:r.arrI)||r.arrI||r.arrA||r.eta;
+  var maxTram=arr?new Date(arr.getTime()+15*864e5):null;
+  var maxDev=arr?new Date(arr.getTime()+21*864e5):null;
+  var emisTxt=r.emis||"EMISION EN DESTINO";
+  if(((r.emisDest||"").toLowerCase()==="sí")||((r.emisDest||"").toLowerCase()==="si"))emisTxt+="&nbsp;&nbsp;(Puede solicitar a su embarcador emisión en destino)";
+  var clause=String(r.onward||"").toUpperCase();
+  var premisa=clause.indexOf("BOLIVIA")!==-1?"CARGO IN TRANSIT TO BOLIVIA":(clause?clause.slice(0,70):"—");
+  var naveTxt=((r.nave||"")+" "+(r.viaje||"")).trim();
+  var h="";
+  h+='<div class="doc-header"><div class="lg">'+LOGO_SVG+'</div><div class="ht"><div class="agent">As Agent For:</div><div class="everline">EVERGREEN LINE</div><div class="everbol">Servicios de Transporte Marítimo Everbol Shipping S.R.L.</div></div></div>';
+  h+='<h1>AVISO DE LLEGADA</h1>';
+  h+='<p>Estimados Señores,</p>';
+  h+='<p class="consignee">'+(r.cons||"—")+'</p>';
+  h+='<p>Informamos que la carga amparada en el BL proveniente de: <span class="lbl">'+polLabel(r.pol)+'</span></p>';
+  h+='<div class="flex-row"><span class="fl">EGLV'+r.ir+'</span><span class="fc">Que arribo al puerto : '+r.pod+', CHILE</span><span class="fr">Nave servicio principal: '+naveTxt+'</span></div>';
+  h+='<div class="row-feeder"><span class="l"></span><span class="c">ETA POD: '+(arr?(pad2(arr.getDate())+"/"+pad2(arr.getMonth()+1)+"/"+arr.getFullYear()):"—")+' (Sujeta a conexión con el feeder)</span><span class="r">Nave Feeder; '+(r.feeder||"—")+'</span></div>';
+  h+='<div class="vertical-equip"><div>20\' SD → '+n20+'</div><div>40\' SD → '+n40sd+'</div><div>40\' SH → '+n40sh+'</div></div>';
+  h+='<p>Fecha maxima de trámite de liberación/desconsolidación sin pago de sobrestadía anticipada: <span class="lbl">'+(maxTram?(pad2(maxTram.getDate())+"/"+pad2(maxTram.getMonth()+1)+"/"+maxTram.getFullYear()):"—")+'</span></p>';
+  h+='<p>Así mismo nuestro sistema muestra que el BL: <span class="lbl">'+emisTxt+'</span></p>';
+  h+='<p>El BL indica la premisa: <span class="green">'+premisa+'</span></p>';
+  h+='<p>Solicitamos enviar el NIT de su empresa escaneado por este medio y C.I. del Representante Legal</p>';
+  h+='<p class="detalle">Detalle de montos a cancelar, los pagos pueden realizarse en nuestra cuenta en BOLIVIANOS:</p>';
+  h+='<table class="tbl-rec"><colgroup><col style="width:20%"><col style="width:16%"><col style="width:11%"><col style="width:7%"><col style="width:7%"><col style="width:20%"><col style="width:19%"></colgroup><thead><tr>'
+    +'<th>RECARGOS LINEA</th><th>Costo Unitario</th><th>Sub total</th><th>Moneda Recargo</th><th>Pais Pago</th><th>Datos Bancarios</th><th>Titular de la cuenta</th></tr></thead><tbody>'
+    +'<tr><td class="b">FLETE</td><td>Indicado en el BL</td><td class="r">USD 0.00</td><td>USD</td><td>CHILE</td><td class="bank" rowspan="2">EVERGREEN SHIPPING AGENCY (CHILE) SPA BANCO SANTANDER CHILE 5100293490 *</td><td class="bank" rowspan="2">EVERGREEN SHIPPING AGENCY (CHILE) SPA</td></tr>'
+    +'<tr><td class="b">THC/D</td><td>Indicado en el BL</td><td class="r">USD '+thc.toFixed(2)+'</td><td>USD</td><td>CHILE</td></tr></tbody></table>';
+  h+='<p class="notes">* Información completa en el instructivo de pago</p>';
+  h+='<table class="tbl-rec"><colgroup><col style="width:20%"><col style="width:16%"><col style="width:11%"><col style="width:7%"><col style="width:7%"><col style="width:20%"><col style="width:19%"></colgroup><thead><tr>'
+    +'<th>RECARGOS LOCALES</th><th>Costo Unitario</th><th>Sub total</th><th>Moneda Recargo</th><th>Pais Pago</th><th>Datos Bancarios</th><th>Titular de la cuenta</th></tr></thead><tbody>'
+    +'<tr><td class="b">Visto bueno por contenedor Full (*)</td><td>20\'('+120+' USD) y 40\'('+200+' USD)</td><td class="r">USD '+vbF.toFixed(2)+'</td><td>USD</td><td>BOLIVIA</td><td class="bank" rowspan="5">BANCO BCP<br>CUENTA EN BOLIVIANOS :<br>701-5102373-3-58</td><td class="bank" rowspan="5">Servicios de transporte marítimo EVERBOL SHIPPING S.R.L.<br>NIT 676271028</td></tr>'
+    +'<tr><td class="b">Visto bueno por contenedor desconsolidado(*)</td><td>20\'('+150+' USD) y 40\'('+200+' USD)</td><td class="r">USD '+vbD.toFixed(2)+'</td><td>USD</td><td>BOLIVIA</td></tr>'
+    +'<tr><td class="b">Trámite Documentario (*)</td><td>POR BL (USD 60)</td><td class="r">USD 60.00</td><td>USD</td><td>BOLIVIA</td></tr>'
+    +'<tr><td class="b">Servicio  Administrativo (*)</td><td>20\' (60 USD)y 40\' (120 USD)</td><td class="r">USD '+adm.toFixed(2)+'</td><td>USD</td><td>BOLIVIA</td></tr>'
+    +'<tr><td class="b">Emision de BL (*)</td><td>POR BL (USD 60)</td><td class="r">USD 60.00</td><td>USD</td><td>BOLIVIA</td></tr></tbody></table>';
+  h+='<p class="notes">Para los recargos locales se debe considerar TC referencial del BCB</p>';
+  h+='<p class="notes">* Servicios facturados, junto con el (los) voucher de depósito indicar (NIT y Razón Social) de lo contrario se procederá a facturar SIN NOMBRE Y NIT CERO</p>';
+  h+='<p class="notes">Al enviar los comprobantes de pagos por favor mantener en copia los correos : csd.impo@everbolshipping.bo ; fin@everbolshipping.bo</p>';
+  h+='<p>FECHA MÁXIMA DE DEVOLUCIÓN: <span class="lbl">'+(maxDev?maxDev.toLocaleDateString("es",{weekday:"long",day:"numeric",month:"long",year:"numeric"}):"—")+'</span></p>';
+  h+='<p class="notes"><b>LOS CONTENEDORES NO SERÁN AUTORIZADOS PARA SU INGRESO A DEPÓSITOS SI CUENTAN CON SOBRESTADÍA.</b></p>';
+  h+='<p class="notes">CONSIDERE NUESTRAS TARIFAS DE SOBRESTADIA:</p>';
+  h+='<table class="tbl-sobr"><thead><tr><th>Equipo</th><th>Iquique</th><th>Arica</th><th>Matarani</th></tr></thead><tbody>'
+    +'<tr><td>20 SD</td><td>USD 55.-</td><td>USD 55.-</td><td>USD 55.-</td></tr>'
+    +'<tr><td>40 SD/HC</td><td>USD 110.-</td><td>USD 110.-</td><td>USD 110.-</td></tr></tbody></table>';
+  h+='<p class="notes">Comuníquese con el área documental para regularizar su deuda pendiente: csd.impo@everbolshipping.bo</p>';
+  h+='<p class="notes">Recepción de contenedores en LOGRA previa autorización del área logística (log@everbolshipping.bo)</p>';
+  h+='<p class="notes">Agradecemos su preferencia y quedamos atentos a sus consultas!</p>';
+  h+='<p class="notes">PARA REALIZAR RASTREO A SU CARGA PUEDE HACERLO EN LA WEB….... <b>TRACKING</b></p>';
+  h+='<p class="foot-final">Dirección 4to Anillo entre Av. San Martin y Av. La Salle Edificio Centro Empresarial Torre DUO Piso 8 of 8A, Santa Cruz</p>';
+  return h;
+}
+/* ===== PDF: 1 sola hoja A4, sin doble margen ===== */
+function pdfOptions(){
+  return{margin:0,
+    image:{type:"png",quality:0.98},
+    html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff",logging:false},
+    jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},
+    pagebreak:{mode:["avoid-all","css"]}};
+}
+function showAviso(html){$("avisoPage").innerHTML=html;
+  $("avisoWrap").style.display="";$("btnPdfAviso").style.display="";$("btnPrintAviso").style.display="";
+  $("avisoWrap").scrollIntoView({behavior:"smooth"});}
+$("btnGenAviso").addEventListener("click",function(){
+  var q=$("blInput").value.trim();if(!q){setAvisoStatus("⚠ Ingresa un BL.","err");return;}
+  var r=null;state.records.forEach(function(x){if(!r&&String(x.ir).trim()===q)r=x;});
+  if(!r){setAvisoStatus("⚠ BL no encontrado.","err");return;}
+  showAviso(buildAviso(r));
+  setAvisoStatus("✔ Aviso EGLV"+r.ir+" listo (1 hoja A4, sin recortes).","ok");});
+$("btnPdfAviso").addEventListener("click",function(){
+  if(!$("avisoPage").innerHTML)return;
+  setAvisoStatus("Generando PDF…");
+  html2pdf().set(pdfOptions()).from($("avisoPage")).save("AVISODELLEGADA."+($("blInput").value.trim()||"BL")+".pdf")
+    .then(function(){setAvisoStatus("✔ PDF descargado (1 hoja).","ok");});});
+$("btnPrintAviso").addEventListener("click",function(){
+  var w=window.open("","_blank");if(!w)return;
+  w.document.write('<html><head><title>AVISO</title><style>'+document.getElementById("avisoCss").textContent+' body{margin:0;background:#fff} #avisoPage{height:auto;min-height:0;overflow:visible}</style></head><body><div id="avisoPage">'+$("avisoPage").innerHTML+'</div></body></html>');
+  w.document.close();w.focus();setTimeout(function(){w.print();},300);});
+$("btnZipAviso").addEventListener("click",function(){
+  var nave=$("selNaveAviso").value;if(!nave){setAvisoStatus("⚠ Selecciona NAVE.","err");return;}
+  var recs=state.records.filter(function(r){return (r.vsl||"(SIN NAVE)")===nave;});
+  if(!recs.length){setAvisoStatus("⚠ La nave no tiene BLs.","err");return;}
+  var btn=this;btn.disabled=true;
+  var stage=$("printStage");stage.style.display="block";
+  var zip=new JSZip(),folder=zip.folder(nave.replace(/[\\\/\:\*\?\"\<\>\|]/g,"").trim()||"NAVE");
+  var chain=Promise.resolve();
+  recs.forEach(function(r,i){
+    chain=chain.then(function(){
+      setAvisoStatus("PDF "+(i+1)+"/"+recs.length+" · EGLV"+r.ir);
+      stage.innerHTML='<div id="avisoPage">'+buildAviso(r)+'</div>';
+      return new Promise(function(res){setTimeout(res,60);}).then(function(){
+        return html2pdf().set(pdfOptions()).from(stage.firstChild).output("blob");
+      }).then(function(blob){folder.file(r.ir+".pdf",blob);});});});
+  chain.then(function(){setAvisoStatus("Comprimiendo…");return zip.generateAsync({type:"blob"});})
+  .then(function(out){var a=document.createElement("a");a.href=URL.createObjectURL(out);
+    a.download="AVISOS_"+(nave.replace(/\s+/g,"_")||"NAVE")+".zip";document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+    setAvisoStatus("✔ ZIP con "+recs.length+" PDFs (1 hoja c/u).","ok");})
+  .catch(function(err){setAvisoStatus("⚠ "+err.message,"err");})
+  .then(function(){stage.style.display="none";stage.innerHTML="";btn.disabled=false;});});
+
+/* ===== FILTROS ===== */
+function fillFilters(){
+  var pods={},servs={},dests={},vsls={},months={};
+  state.records.forEach(function(r){pods[r.pod]=r.pod;servs[r.serv]=r.serv;dests[r.dest]=r.dest;vsls[r.vsl]=r.vsl;
+    if(r.eta){var k=monthKeyOf(r.eta);months[k]=cap(MESES[r.eta.getMonth()]);}});
+  function fill(sel,obj,all,sorted){sel.innerHTML="";var o0=document.createElement("option");o0.value="__all";o0.textContent=all;sel.appendChild(o0);
+    var keys=Object.keys(obj);if(sorted==="num")keys.sort(function(a,b){return +a-+b;});else keys.sort();
+    keys.forEach(function(k){var o=document.createElement("option");o.value=k;o.textContent=obj[k];sel.appendChild(o);});}
+  fill($("selPOD"),pods,"POD: Todos");fill($("selServ"),servs,"Servicio: Todos");fill($("selDest"),dests,"Destino: Todos");
+  fill($("selMonth"),months,"Mes: Todos","num");
+  var mo=document.createElement("option");mo.value="__transit";mo.textContent="En tránsito";$("selMonth").appendChild(mo);
+  fill($("selVessel"),vsls,"Nave/Viaje: Todas");
+  state.f={pod:"__all",serv:"__all",dest:"__all",month:"__all",vessel:"__all"};}
+["selPOD","selServ","selDest","selMonth","selVessel"].forEach(function(id){$(id).addEventListener("change",function(){
+  state.f.pod=$("selPOD").value;state.f.serv=$("selServ").value;state.f.dest=$("selDest").value;state.f.month=$("selMonth").value;state.f.vessel=$("selVessel").value;
+  refreshDashboard();refreshVessel();refreshOnward();});});
+function showView(v){
+  ["Dash","Vessel","Data","Onward","Aviso"].forEach(function(k){$("view"+k+"Btn").classList.toggle("active",k.toLowerCase()===v);});
+  $("dashView").style.display=v==="dash"?"":"none";$("vesselView").style.display=v==="vessel"?"":"none";
+  $("dataView").style.display=v==="data"?"":"none";$("onwardView").style.display=v==="onward"?"":"none";
+  $("avisoView").style.display=v==="aviso"?"":"none";
+  if(v==="data")renderDataAll();if(v==="vessel")refreshVessel();if(v==="onward")refreshOnward();}
+$("viewDashBtn").addEventListener("click",function(){showView("dash");});
+$("viewVesselBtn").addEventListener("click",function(){showView("vessel");});
+$("viewDataBtn").addEventListener("click",function(){showView("data");});
+$("viewOnwardBtn").addEventListener("click",function(){showView("onward");});
+$("viewAvisoBtn").addEventListener("click",function(){showView("aviso");});
+/* ===== DATA ===== */
+function renderDataAll(){if(!state.order.length)return;
+  if(!state.d.active||!state.sheets[state.d.active]){state.d.active=state.baseSheet||state.order[0];setDefaultSort();}
+  $("searchInput").value=state.d.term;renderTabs();renderStats();renderTable();}
+function setDefaultSort(){var sh=state.sheets[state.d.active];var idx=-1;
+  sh.header.forEach(function(h,i){if(idx===-1&&/^\s*(IR|BL)\s*$/i.test(h))idx=i;});
+  state.d.sortCol=idx>=0?idx:0;state.d.sortDir=1;}
+function renderTabs(){$("tabsBox").innerHTML="";
+  state.order.forEach(function(nm){var b=el("button","tab"+(nm===state.d.active?" active":""),nm);
+    b.addEventListener("click",function(){state.d.active=nm;setDefaultSort();renderTabs();renderStats();renderTable();});
+    $("tabsBox").appendChild(b);});}
+function renderStats(){var sh=state.sheets[state.d.active];$("statsBox").innerHTML="";
+  [["Hoja: "+state.d.active],[sh.rows.length.toLocaleString("es")+" filas"],[sh.header.length+" columnas"],
+   ["Orden: "+sh.header[state.d.sortCol]+(state.d.sortDir===1?" ↑":" ↓")]].forEach(function(s){$("statsBox").appendChild(el("span","stat",s[0]));});}
+function cellText(v){if(v instanceof Date){return pad2(v.getDate())+"/"+pad2(v.getMonth()+1)+"/"+v.getFullYear();}return v;}
+function isEmpty(v){return v===null||String(v).trim()==="";}
+function cmp(a,b){var ea=isEmpty(a),eb=isEmpty(b);if(ea&&eb)return 0;if(ea)return 1;if(eb)return -1;
+  if(a instanceof Date&&b instanceof Date)return a-b;
+  if(isNum(a)&&isNum(b))return Number(a)-Number(b);
+  return String(a).localeCompare(String(b),"es",{numeric:true,sensitivity:"base"});}
+function renderTable(){var sh=state.sheets[state.d.active];var rows=sh.rows;
+  if(state.d.term){var t=state.d.term;rows=rows.filter(function(r){return r.some(function(c){return String(cellText(c)).toLowerCase().indexOf(t)!==-1;});});}
+  var col=state.d.sortCol;state.d.view=rows.slice().sort(function(a,b){return cmp(a[col],b[col])*state.d.sortDir;});
+  var tr=el("tr");
+  sh.header.forEach(function(h,i){var th=el("th",null,h);
+    if(i===state.d.sortCol)th.appendChild(el("span","arrow",state.d.sortDir===1?"▲":"▼"));
+    th.addEventListener("click",function(){if(state.d.sortCol===i)state.d.sortDir=-state.d.sortDir;else{state.d.sortCol=i;state.d.sortDir=1;}renderStats();renderTable();});
+    tr.appendChild(th);});
+  $("theadBox").innerHTML="";$("theadBox").appendChild(tr);
+  var tb=el("tbody"),frag=document.createDocumentFragment();
+  state.d.view.forEach(function(r){var r2=el("tr");
+    for(var c=0;c<sh.header.length;c++){var td=el("td",null,String(cellText(r[c]!==undefined?r[c]:"")));td.title=td.textContent;r2.appendChild(td);}
+    frag.appendChild(r2);});
+  tb.appendChild(frag);$("tbodyBox").innerHTML="";$("tbodyBox").appendChild(tb);}
+$("searchInput").addEventListener("input",function(){state.d.term=this.value.trim().toLowerCase();renderTable();});
+$("btnSorted").addEventListener("click",function(){if(!state.d.active)return;
+  var sh=state.sheets[state.d.active];
+  var aoa=[sh.header].concat(state.d.view.map(function(r){return r.map(cellText);}));
+  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),state.d.active.slice(0,31));
+  XLSX.writeFile(wb,state.fileName.replace(/\.[^.]+$/,"")+"_ordenado.xlsx");
+  setStatus("✔ Descargado ordenado.","ok");});
+$("btnSummary").addEventListener("click",function(){
+  var recs=filteredRecords(),agg=aggregate(recs);
+  var t20=0,s40sd=0,s40sh=0;recs.forEach(function(r){t20+=r.c20;s40sd+=r.c40sd;s40sh+=r.c40sh;});
+  var wb=XLSX.utils.book_new();
+  var podNames=agg.ports.map(function(p){return p.pod;}).sort();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Period","20SD","40SD","40SH","Total"]].concat(agg.months.map(function(m){return[m.label,m.c20,m.c40sd,m.c40sh,m.total];}))),"Month Summary");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Period"].concat(podNames,["Total"])].concat(agg.months.map(function(m){return[m.label].concat(podNames.map(function(p){return m.pods[p]||0;}),[m.total]);}))),"POD Summary");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Period"].concat(podNames,["Total"])].concat(agg.weeks.map(function(w){return[w.label].concat(podNames.map(function(p){return w.pods[p]||0;}),[w.total]);}))),"Weekly Summary");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Period","20SD","40SD","40SH","Total"]].concat(agg.weeks.map(function(w){return[w.label,w.c20,w.c40sd,w.c40sh,w.total];}))),"Weekly x Tipo");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Trade","PORT","20SD","40SD","40SH"]].concat(agg.pols.map(function(p){return[p.trade,p.pol,p.c20,p.c40sd,p.c40sh];}))),"Cargo by POL");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Puerto","Cont. 20'","Cont. 40'","Total TEUs"]].concat(agg.ports.map(function(p){var t40=p.c40sd+p.c40sh;return[p.pod,p.c20,t40,p.c20+t40*2];}))),"TEUs por puerto");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Puerto","Servicio","Cont.","TEUs","BL/IR"]].concat(agg.servs.map(function(s){return[s.pod,s.serv,s.cont,s.teu,s.bl];}))),"Desglose servicio");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["VSLVOY","20SD","40SD","40SH","Total","TEUs","BL/IR"]].concat(agg.vsls.map(function(v){return[v.vsl,v.c20,v.c40sd,v.c40sh,v.total,v.teu,v.bl];}))),"Nave-Viaje");
+  XLSX.writeFile(wb,state.fileName.replace(/\.[^.]+$/,"")+"_dashboard.xlsx");
+  setStatus("✔ Resumen descargado.","ok");});
+$("btnReset").addEventListener("click",function(){
+  Object.keys(charts).forEach(function(k){charts[k].destroy();delete charts[k];});
+  state={sheets:{},order:[],baseSheet:null,records:[],fileName:"",d:{active:null,sortCol:0,sortDir:1,term:"",view:[]},f:{pod:"__all",serv:"__all",dest:"__all",month:"__all",vessel:"__all"}};
+  $("fileInput").value="";$("appCard").style.display="none";$("uploadCard").style.display="";setStatus("");setAvisoStatus("");});
+function fillBlList(){var dl=$("blList");dl.innerHTML="";
+  state.records.slice(0,900).forEach(function(r){var o=document.createElement("option");o.value=r.ir;dl.appendChild(o);});}
+function fillNaves(){var map={};state.records.forEach(function(r){var n=r.vsl||"(SIN NAVE)";map[n]=(map[n]||0)+1;});
+  var sel=$("selNaveAviso");sel.innerHTML="";
+  var o0=document.createElement("option");o0.value="";o0.textContent="— NAVE PRINCIPAL —";sel.appendChild(o0);
+  Object.keys(map).sort().forEach(function(n){var o=document.createElement("option");o.value=n;o.textContent=n+" ("+map[n]+" BL)";sel.appendChild(o);});}
+function afterLoad(){buildRecords();fillFilters();fillBlList();fillNaves();
+  $("fileChip").textContent="📄 "+state.fileName;
+  $("uploadCard").style.display="none";$("appCard").style.display="";
+  showView("dash");refreshDashboard();refreshVessel();refreshOnward();
+  setStatus("✔ Archivo cargado ("+state.records.length+" registros). Aviso en 1 hoja A4 sin recortes.","ok");}
+})();
+</script>
+<script id="aviso-pdf-fix-js">
+(function () {
+  const A4_PAGE_W_MM = 210;
+  const A4_PAGE_H_MM = 297;
+  const A4_WIDTH_PX = 794;
+
+  window.avisoPdfFix = async function (event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    }
+
+    const source = findAvisoSource();
+
+    if (!source) {
+      alert("No se encontró el Aviso de Llegada. Abre la pestaña Aviso de Llegada o genera primero la vista previa.");
+      return;
+    }
+
+    if (typeof html2canvas === "undefined" || typeof window.jspdf === "undefined") {
+      console.warn("html2canvas o jsPDF no están disponibles. Usando window.print().");
+      window.print();
+      return;
+    }
+
+    const stage = document.createElement("div");
+    stage.className = "aviso-pdf-stage";
+    stage.id = "aviso-pdf-fix-stage";
+
+    const clone = source.cloneNode(true);
+    clone.classList.add("aviso-pdf-sheet");
+    clone.id = "aviso-pdf-fix-sheet";
+
+    // Remove controls/toolbars that should not appear in PDF
+    clone.querySelectorAll(
+      "button, select, input, textarea, .no-print, .no-pdf, [data-html2canvas-ignore]"
+    ).forEach(el => el.remove());
+
+    // Normalize export styles
+    clone.style.transform = "none";
+    clone.style.zoom = "1";
+    clone.style.width = A4_WIDTH_PX + "px";
+    clone.style.maxWidth = A4_WIDTH_PX + "px";
+    clone.style.height = "auto";
+    clone.style.maxHeight = "none";
+    clone.style.overflow = "visible";
+    clone.style.boxShadow = "none";
+    clone.style.margin = "0";
+
+    stage.appendChild(clone);
+    document.body.appendChild(stage);
+
+    try {
+      await document.fonts.ready;
+      await waitImages(clone);
+      await nextFrame();
+
+      const canvas = await html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: "#ffffff",
+        logging: false,
+        windowWidth: A4_WIDTH_PX,
+        scrollX: 0,
+        scrollY: 0
+      });
+
+      const { jsPDF } = window.jspdf;
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+        compress: true
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+
+      // Fit full preview into ONE A4 page, without cropping
+      const baseWidthMm = A4_PAGE_W_MM;
+      let imgHeightMm = canvas.height * baseWidthMm / canvas.width;
+
+      let finalWidthMm = baseWidthMm;
+      let finalHeightMm = imgHeightMm;
+
+      if (imgHeightMm > A4_PAGE_H_MM) {
+        finalHeightMm = A4_PAGE_H_MM;
+        finalWidthMm = canvas.width * A4_PAGE_H_MM / canvas.height;
+      }
+
+      const x = (A4_PAGE_W_MM - finalWidthMm) / 2;
+      const y = 0;
+
+      pdf.addImage(imgData, "PNG", x, y, finalWidthMm, finalHeightMm, undefined, "FAST");
+      pdf.save("aviso-de-llegada.pdf");
+
+    } catch (err) {
+      console.error("Error generando Aviso PDF:", err);
+      alert("No se pudo generar el PDF automáticamente. Se abrirá la impresión del navegador como respaldo.");
+      window.print();
+    } finally {
+      stage.remove();
+    }
+  };
+
+  function findAvisoSource() {
+    // Best case: you add id="aviso-a4" or data-aviso-pdf to the Aviso preview sheet
+    const explicit = document.querySelector("#aviso-a4, [data-aviso-pdf]");
+    if (explicit) return explicit;
+
+    // Common selectors used by the portal
+    const selectors = [
+      "#aviso-preview .aviso-a4",
+      "#aviso-preview .a4",
+      "#aviso-preview .aviso-sheet",
+      "#aviso-preview .aviso-content",
+      "#avisoPreview .aviso-a4",
+      ".aviso-preview .aviso-a4",
+      ".aviso-preview .a4",
+      ".aviso-preview",
+      "#aviso-preview"
+    ];
+
+    for (const selector of selectors) {
+      const el = document.querySelector(selector);
+      if (el && el.offsetHeight > 150) return el;
+    }
+
+    // Fallback: find visible container that contains Aviso de Llegada text + table
+    const candidates = Array.from(document.querySelectorAll("section, div"))
+      .filter(el => /aviso\s*de\s*llegada/i.test(el.textContent || ""))
+      .filter(el => el.querySelector("table"))
+      .filter(el => el.offsetHeight > 250)
+      .sort((a, b) => b.offsetHeight - a.offsetHeight);
+
+    return candidates[0] || null;
+  }
+
+  function waitImages(root) {
+    const imgs = Array.from(root.querySelectorAll("img"));
+
+    return Promise.all(
+      imgs.map(img => {
+        if (img.complete) return Promise.resolve();
+
+        return new Promise(resolve => {
+          img.addEventListener("load", resolve, { once: true });
+          img.addEventListener("error", resolve, { once: true });
+        });
+      })
+    );
+  }
+
+  function nextFrame() {
+    return new Promise(resolve => requestAnimationFrame(() => resolve()));
+  }
+
+  /*
+    OPTIONAL AUTO BINDING:
+    This tries to find the "PDF" button inside Aviso de Llegada and bind the fix automatically.
+    If your button already has an onclick, the safest option is to manually replace it with:
+    onclick="avisoPdfFix(event)"
+  */
+  function bindAvisoPdfButton() {
+    const buttons = Array.from(document.querySelectorAll("button"));
+
+    const pdfBtn = buttons.find(btn => {
+      const text = (btn.textContent || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+
+      return (
+        text.includes("pdf") &&
+        !text.includes("zip") &&
+        !text.includes("resumen") &&
+        !text.includes("tabla")
+      );
+    });
+
+    if (pdfBtn && !pdfBtn.dataset.avisoPdfFixBound) {
+      pdfBtn.dataset.avisoPdfFixBound = "1";
+
+      pdfBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        window.avisoPdfFix(e);
+      }, true);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindAvisoPdfButton);
+  } else {
+    bindAvisoPdfButton();
+  }
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</body>
+</html>
