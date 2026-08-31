@@ -103,7 +103,6 @@ tr.tot td{background:var(--total);font-weight:800;color:var(--eg-deep);border-to
 .clause-note{background:var(--pale2);border:1px solid var(--lime);border-left:5px solid var(--eg);color:var(--eg-deep);font-weight:700;letter-spacing:.4px;font-size:12px;padding:10px 16px;border-radius:10px;margin-bottom:14px}
 .bl-input{flex:1;min-width:200px;padding:10px 16px;border:1.5px solid var(--line);border-radius:999px;font-size:13px;font-weight:700;letter-spacing:1px;outline:none;color:var(--eg-deep)}
 .bl-input:focus{border-color:var(--eg)}
-#printStage{position:fixed;left:-12000px;top:0;width:794px;background:#fff}
 footer{text-align:center;padding:20px;font-size:11.5px;color:var(--muted)}
 footer b{color:var(--eg-dark)}
 @media(max-width:760px){.grid-charts{grid-template-columns:1fr}}
@@ -663,7 +662,10 @@ function showAviso(html){$("avisoPage").innerHTML=html;
   $("avisoWrap").style.display="";$("btnPdfAviso").style.display="";$("btnPrintAviso").style.display="";
   $("avisoWrap").scrollIntoView({behavior:"smooth"});}
 $("btnGenAviso").addEventListener("click",function(){
-  var q=$("blInput").value.trim();if(!q){setAvisoStatus("⚠ Ingresa un BL.","err");return;}
+  var q=$("blInput").value.trim();
+  if(!q){
+    setAvisoStatus($("selNaveAviso").value?"⚠ Ingresa un BL, o usa 📦 ZIP masivo para toda la nave.":"⚠ Ingresa un BL.","err");
+    return;}
   var r=null;state.records.forEach(function(x){if(!r&&String(x.ir).trim()===q)r=x;});
   if(!r){setAvisoStatus("⚠ BL no encontrado.","err");return;}
   showAviso(buildAviso(r));
@@ -677,28 +679,34 @@ $("btnPrintAviso").addEventListener("click",function(){
   var w=window.open("","_blank");if(!w)return;
   w.document.write('<html><head><title>AVISO</title><style>'+document.getElementById("avisoCss").textContent+' body{margin:0;background:#fff} #avisoPage{height:auto;min-height:0;overflow:visible}</style></head><body><div id="avisoPage">'+$("avisoPage").innerHTML+'</div></body></html>');
   w.document.close();w.focus();setTimeout(function(){w.print();},300);});
+function safeName(s){return String(s||"").replace(/[\\\/:*?"<>|]+/g,"").replace(/\s+/g,"_").trim();}
 $("btnZipAviso").addEventListener("click",function(){
-  var nave=$("selNaveAviso").value;if(!nave){setAvisoStatus("⚠ Selecciona NAVE.","err");return;}
+  var nave=$("selNaveAviso").value;
+  if(!nave){setAvisoStatus("⚠ Selecciona una NAVE para generar sus avisos.","err");return;}
+  if(typeof window.avisoSheetHtmlToPdf!=="function"){setAvisoStatus("⚠ El generador de PDF no está disponible.","err");return;}
   var recs=state.records.filter(function(r){return (r.vsl||"(SIN NAVE)")===nave;});
-  if(!recs.length){setAvisoStatus("⚠ La nave no tiene BLs.","err");return;}
+  if(!recs.length){setAvisoStatus("⚠ La nave seleccionada no tiene BLs.","err");return;}
   var btn=this;btn.disabled=true;
-  var stage=$("printStage");stage.style.display="block";
-  var zip=new JSZip(),folder=zip.folder(nave.replace(/[\\\/\:\*\?\"\<\>\|]/g,"").trim()||"NAVE");
+  var zip=new JSZip();
+  var used={};
   var chain=Promise.resolve();
   recs.forEach(function(r,i){
     chain=chain.then(function(){
-      setAvisoStatus("PDF "+(i+1)+"/"+recs.length+" · EGLV"+r.ir);
-      stage.innerHTML='<div id="avisoPage">'+buildAviso(r)+'</div>';
-      return new Promise(function(res){setTimeout(res,60);}).then(function(){
-        return html2pdf().set(pdfOptions()).from(stage.firstChild).output("blob");
-      }).then(function(blob){folder.file(r.ir+".pdf",blob);});});});
-  chain.then(function(){setAvisoStatus("Comprimiendo…");return zip.generateAsync({type:"blob"});})
+      setAvisoStatus("Generando aviso "+(i+1)+"/"+recs.length+" · BL "+r.ir+" …");
+      return window.avisoSheetHtmlToPdf(buildAviso(r)).then(function(pdf){
+        var name=(safeName(r.ir)||("BL_"+(i+1)));
+        if(used[name])name+="_"+(++used[name]);else used[name]=1;
+        zip.file(name+".pdf",pdf.output("blob"));
+      });
+    });
+  });
+  chain.then(function(){setAvisoStatus("Comprimiendo "+recs.length+" avisos…");return zip.generateAsync({type:"blob"});})
   .then(function(out){var a=document.createElement("a");a.href=URL.createObjectURL(out);
-    a.download="AVISOS_"+(nave.replace(/\s+/g,"_")||"NAVE")+".zip";document.body.appendChild(a);a.click();document.body.removeChild(a);
+    a.download="AVISOS_"+(safeName(nave)||"NAVE")+".zip";document.body.appendChild(a);a.click();document.body.removeChild(a);
     setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
-    setAvisoStatus("✔ ZIP con "+recs.length+" PDFs (1 hoja c/u).","ok");})
-  .catch(function(err){setAvisoStatus("⚠ "+err.message,"err");})
-  .then(function(){stage.style.display="none";stage.innerHTML="";btn.disabled=false;});});
+    setAvisoStatus("✔ ZIP con "+recs.length+" avisos de la nave "+nave+" descargado.","ok");})
+  .catch(function(err){console.error(err);setAvisoStatus("⚠ Error generando el ZIP: "+(err&&err.message||err),"err");})
+  .then(function(){btn.disabled=false;});});
 
 /* ===== FILTROS ===== */
 function fillFilters(){
@@ -807,40 +815,19 @@ function afterLoad(){buildRecords();fillFilters();fillBlList();fillNaves();
   const A4_WIDTH_PX = 794;
   const PAGE_MARGIN_MM = 10; // white margin around the sheet in the exported PDF
 
-  window.avisoPdfFix = async function (event) {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-    }
-
-    const source = findAvisoSource();
-
-    if (!source) {
-      alert("No se encontró el Aviso de Llegada. Abre la pestaña Aviso de Llegada o genera primero la vista previa.");
-      return;
-    }
-
-    if (typeof html2canvas === "undefined" || typeof window.jspdf === "undefined") {
-      console.warn("html2canvas o jsPDF no están disponibles. Usando window.print().");
-      window.print();
-      return;
-    }
-
+  // Render an Aviso sheet element into a single-page A4 jsPDF (shared by the
+  // single "PDF" button and the bulk "ZIP masivo" flow so both look identical).
+  async function renderSheetToPdf(sourceEl) {
     const stage = document.createElement("div");
     stage.className = "aviso-pdf-stage";
-    stage.id = "aviso-pdf-fix-stage";
 
-    const clone = source.cloneNode(true);
+    const clone = sourceEl.cloneNode(true);
     clone.classList.add("aviso-pdf-sheet");
-    clone.id = "aviso-pdf-fix-sheet";
-
-    // Remove controls/toolbars that should not appear in PDF
+    clone.removeAttribute("id");
     clone.querySelectorAll(
       "button, select, input, textarea, .no-print, .no-pdf, [data-html2canvas-ignore]"
     ).forEach(el => el.remove());
 
-    // Normalize export styles
     clone.style.transform = "none";
     clone.style.zoom = "1";
     clone.style.width = A4_WIDTH_PX + "px";
@@ -871,17 +858,10 @@ function afterLoad(){buildRecords();fillFilters();fillBlList();fillNaves();
       });
 
       const { jsPDF } = window.jspdf;
-
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-        compress: true
-      });
-
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
       const imgData = canvas.toDataURL("image/png");
 
-      // Fit full preview into ONE A4 page, without cropping, keeping a page margin
+      // Fit the whole sheet into ONE A4 page, without cropping, keeping a page margin
       const availWidthMm = A4_PAGE_W_MM - PAGE_MARGIN_MM * 2;
       const availHeightMm = A4_PAGE_H_MM - PAGE_MARGIN_MM * 2;
 
@@ -897,14 +877,52 @@ function afterLoad(){buildRecords();fillFilters();fillBlList();fillNaves();
       const y = PAGE_MARGIN_MM;
 
       pdf.addImage(imgData, "PNG", x, y, finalWidthMm, finalHeightMm, undefined, "FAST");
-      pdf.save(avisoFileName());
+      return pdf;
+    } finally {
+      stage.remove();
+    }
+  }
 
+  // Render an Aviso from an HTML string (used by the bulk ZIP-by-vessel flow).
+  window.avisoSheetHtmlToPdf = async function (html) {
+    const host = document.createElement("div");
+    host.style.cssText = "position:fixed;left:-13000px;top:0;width:" + A4_WIDTH_PX + "px";
+    host.innerHTML = html;
+    document.body.appendChild(host);
+    try {
+      return await renderSheetToPdf(host);
+    } finally {
+      host.remove();
+    }
+  };
+
+  window.avisoPdfFix = async function (event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    }
+
+    const source = findAvisoSource();
+
+    if (!source) {
+      alert("No se encontró el Aviso de Llegada. Abre la pestaña Aviso de Llegada o genera primero la vista previa.");
+      return;
+    }
+
+    if (typeof html2canvas === "undefined" || typeof window.jspdf === "undefined") {
+      console.warn("html2canvas o jsPDF no están disponibles. Usando window.print().");
+      window.print();
+      return;
+    }
+
+    try {
+      const pdf = await renderSheetToPdf(source);
+      pdf.save(avisoFileName());
     } catch (err) {
       console.error("Error generando Aviso PDF:", err);
       alert("No se pudo generar el PDF automáticamente. Se abrirá la impresión del navegador como respaldo.");
       window.print();
-    } finally {
-      stage.remove();
     }
   };
 
@@ -963,7 +981,14 @@ function afterLoad(){buildRecords();fillFilters();fillBlList();fillNaves();
   }
 
   function nextFrame() {
-    return new Promise(resolve => requestAnimationFrame(() => resolve()));
+    // rAF is paused in background tabs; fall back to a timer so bulk generation
+    // does not hang if the user switches away mid-run.
+    return new Promise(resolve => {
+      let done = false;
+      const finish = () => { if (!done) { done = true; resolve(); } };
+      requestAnimationFrame(finish);
+      setTimeout(finish, 60);
+    });
   }
 
   /*

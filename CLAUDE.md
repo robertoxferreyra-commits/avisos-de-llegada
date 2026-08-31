@@ -79,8 +79,20 @@ Business rules are **hardcoded** here and must be edited in place:
 - The "premisa" line keys off whether `onward inland routing` mentions `BOLIVIA`
   (→ "CARGO IN TRANSIT TO BOLIVIA").
 
-`btnZipAviso` renders every BL for a selected vessel through a hidden `#printStage` and packs
-the PDFs into a ZIP.
+### PDF export
+
+Both PDF paths share `renderSheetToPdf(el)` in the `#aviso-pdf-fix-js` IIFE: clone the sheet
+→ `.aviso-pdf-sheet` → html2canvas → one jsPDF A4 page scaled to fit inside `PAGE_MARGIN_MM`.
+
+- Single "PDF" button → `window.avisoPdfFix()` on the live `#avisoPage` (`[data-aviso-pdf]`),
+  saved as `<BL>.pdf` (`avisoFileName()` reads `#blInput`).
+- `btnZipAviso` (📦 ZIP masivo): with a vessel picked in `#selNaveAviso` and no BL, it builds
+  `buildAviso(r)` for every record whose `r.vsl` matches, renders each via
+  `window.avisoSheetHtmlToPdf(html)` (same pipeline, off an offscreen div), and packs
+  `<BL>.pdf` files into `AVISOS_<NAVE>.zip`. Sequential; ~2–3 s per aviso.
+
+The old html2pdf path (`btnPdfAviso` listener, `pdfOptions()`) is dead code — the visible
+button's inline `onclick="avisoPdfFix(event)"` calls `stopImmediatePropagation()` first.
 
 ## Onward-routing clause check
 
