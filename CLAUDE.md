@@ -34,7 +34,10 @@ is required for the page to function.
   alternative PDF exporter. The visible "⬇️ PDF" button is wired to it via inline
   `onclick="avisoPdfFix(event)"` (line ~349), *not* to `#btnPdfAviso`'s own handler. So there
   are two PDF code paths — `btnPdfAviso`'s html2pdf path and `avisoPdfFix`'s
-  html2canvas→jsPDF "fit to one A4 page" path.
+  html2canvas→jsPDF "fit to one A4 page" path. `avisoPdfFix`'s `findAvisoSource()` picks the
+  element to rasterize; `#avisoPage` carries `data-aviso-pdf` so it matches the explicit
+  selector first — without that marker the function falls back to a text heuristic that grabs
+  a far-too-large ancestor (dashboard card, toolbar, clause note all end up in the PDF).
 
 ## Data pipeline
 
