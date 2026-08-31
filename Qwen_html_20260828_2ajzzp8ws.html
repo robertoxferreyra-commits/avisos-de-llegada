@@ -130,15 +130,12 @@ footer b{color:var(--eg-dark)}
 #avisoPage p{margin:1.2mm 0}
 .lbl{font-weight:bold}
 .green{font-weight:bold}
-/* Fila BL / POD / Nave en grid para que NUNCA se corte */
-.flex-row{display:grid;grid-template-columns:22% 38% 40%;align-items:center;gap:6px;font-weight:bold;margin:4px 0;font-size:9px}
-.flex-row .fl{text-align:left;white-space:normal;word-break:break-word}
-.flex-row .fc{text-align:center;white-space:normal}
-.flex-row .fr{text-align:right;white-space:normal;word-break:break-word}
-.row-feeder{display:grid;grid-template-columns:22% 38% 40%;align-items:center;gap:6px;font-weight:bold;margin:4px 0;font-size:9px}
-.row-feeder .l{text-align:left}
-.row-feeder .c{text-align:center;white-space:normal}
-.row-feeder .r{text-align:right;white-space:normal;word-break:break-word}
+/* Fila BL / POD / Nave como tabla (html2canvas no respeta CSS grid y recortaba la 3ra columna) */
+.flex-row,.row-feeder{display:table;table-layout:fixed;width:100%;border-collapse:collapse;font-weight:bold;margin:4px 0;font-size:9px}
+.flex-row>span,.row-feeder>span{display:table-cell;vertical-align:middle;white-space:normal;word-break:break-word;overflow-wrap:anywhere;padding:0 3px}
+.flex-row .fl,.row-feeder .l{width:22%;text-align:left;padding-left:0}
+.flex-row .fc,.row-feeder .c{width:38%;text-align:center}
+.flex-row .fr,.row-feeder .r{width:40%;text-align:right;padding-right:0}
 .vertical-equip{text-align:center;font-weight:bold;margin:2mm 0}
 .vertical-equip div{margin:0.4mm 0}
 .aviso-doc p.detalle,.detalle{margin:1mm 0 0.8mm}
