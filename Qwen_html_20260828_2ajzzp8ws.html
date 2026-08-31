@@ -644,9 +644,9 @@ function buildAviso(r){
   h+='<p>FECHA MÁXIMA DE DEVOLUCIÓN: <span class="lbl">'+(maxDev?maxDev.toLocaleDateString("es",{weekday:"long",day:"numeric",month:"long",year:"numeric"}):"—")+'</span></p>';
   h+='<p class="notes"><b>LOS CONTENEDORES NO SERÁN AUTORIZADOS PARA SU INGRESO A DEPÓSITOS SI CUENTAN CON SOBRESTADÍA.</b></p>';
   h+='<p class="notes">CONSIDERE NUESTRAS TARIFAS DE SOBRESTADIA:</p>';
-  h+='<table class="tbl-sobr"><thead><tr><th>Equipo</th><th>Iquique</th><th>Arica</th><th>Matarani</th></tr></thead><tbody>'
-    +'<tr><td>20 SD</td><td>USD 55.-</td><td>USD 55.-</td><td>USD 55.-</td></tr>'
-    +'<tr><td>40 SD/HC</td><td>USD 110.-</td><td>USD 110.-</td><td>USD 110.-</td></tr></tbody></table>';
+  h+='<table class="tbl-sobr"><thead><tr><th>Equipo</th><th>Iquique</th><th>Arica</th></tr></thead><tbody>'
+    +'<tr><td>20 SD</td><td>USD 55.-</td><td>USD 55.-</td></tr>'
+    +'<tr><td>40 SD/HC</td><td>USD 110.-</td><td>USD 110.-</td></tr></tbody></table>';
   h+='<p class="notes">Comuníquese con el área documental para regularizar su deuda pendiente: csd.impo@everbolshipping.bo</p>';
   h+='<p class="notes">Recepción de contenedores en LOGRA previa autorización del área logística (log@everbolshipping.bo)</p>';
   h+='<p class="notes">Agradecemos su preferencia y quedamos atentos a sus consultas!</p>';
@@ -900,7 +900,7 @@ function afterLoad(){buildRecords();fillFilters();fillBlList();fillNaves();
       const y = PAGE_MARGIN_MM;
 
       pdf.addImage(imgData, "PNG", x, y, finalWidthMm, finalHeightMm, undefined, "FAST");
-      pdf.save("aviso-de-llegada.pdf");
+      pdf.save(avisoFileName());
 
     } catch (err) {
       console.error("Error generando Aviso PDF:", err);
@@ -910,6 +910,12 @@ function afterLoad(){buildRecords();fillFilters();fillBlList();fillNaves();
       stage.remove();
     }
   };
+
+  function avisoFileName() {
+    const input = document.getElementById("blInput");
+    const bl = (input && input.value ? input.value : "").trim().replace(/[\\/:*?"<>|\s]+/g, "");
+    return (bl || "aviso-de-llegada") + ".pdf";
+  }
 
   function findAvisoSource() {
     // Best case: you add id="aviso-a4" or data-aviso-pdf to the Aviso preview sheet
