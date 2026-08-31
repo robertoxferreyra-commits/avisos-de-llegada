@@ -103,6 +103,15 @@ tr.tot td{background:var(--total);font-weight:800;color:var(--eg-deep);border-to
 .clause-note{background:var(--pale2);border:1px solid var(--lime);border-left:5px solid var(--eg);color:var(--eg-deep);font-weight:700;letter-spacing:.4px;font-size:12px;padding:10px 16px;border-radius:10px;margin-bottom:14px}
 .bl-input{flex:1;min-width:200px;padding:10px 16px;border:1.5px solid var(--line);border-radius:999px;font-size:13px;font-weight:700;letter-spacing:1px;outline:none;color:var(--eg-deep)}
 .bl-input:focus{border-color:var(--eg)}
+.calc-conf{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--pale);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:12px}
+.calc-conf label{font-size:11px;font-weight:800;color:var(--eg-deep)}
+.calc-conf input{width:90px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:12px}
+.calc-conf input.bl-input{width:auto}
+.calc-table{width:100%;border-collapse:collapse;font-size:11px}
+.calc-table th{background:var(--eg);color:#fff;padding:6px 8px;white-space:nowrap}
+.calc-table td{padding:5px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.calc-table input,.calc-table select{border:1px solid var(--line);border-radius:6px;padding:4px 6px;font-size:11px}
+.calc-del{border:none;background:#FDEcea;color:#B3261E;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700}
 footer{text-align:center;padding:20px;font-size:11.5px;color:var(--muted)}
 footer b{color:var(--eg-dark)}
 @media(max-width:760px){.grid-charts{grid-template-columns:1fr}}
@@ -263,10 +272,11 @@ footer b{color:var(--eg-dark)}
     <div class="card-head"><span class="num">1</span><h2>SUBIR ARCHIVO · CUALQUIER PERSONA PUEDE USARLO</h2></div>
     <div class="card-body">
       <div class="guide">
-        <div class="g-step"><b>① SUBE TU XLSX</b>Hoja "Base" con IR, POD, POL, 20SD/40SD/40SH, A/C, Nave, Feeder, arribos, Emisión y Onward Routing.</div>
+        <div class="g-step"><b>① SUBE TU XLSX</b>Hoja "Base" con IR/BL, Contenedores, POD, POL, 20SD/40SD/40SH, A/C, Nave, Feeder, arribos, Emisión y Onward Routing.</div>
         <div class="g-step"><b>② DASHBOARD AUTOMÁTICO</b>KPIs, MONTH SUMMARY, POD SUMMARY, semanas W21→W53, CARGO BY POL, TEUs por puerto y SERVICE BREAKDOWN.</div>
-        <div class="g-step"><b>③ AVISO DE LLEGADA</b>PDF en UNA sola hoja A4, sin recortes: columnas bancarias completas y nave visible.</div>
-        <div class="g-step"><b>④ FILTROS Y DATOS</b>POD, Servicio, Destino (A/C), Mes y Nave/Viaje · vista ordenable y validación de cláusula.</div>
+        <div class="g-step"><b>③ AVISO DE LLEGADA</b>PDF en UNA sola hoja A4, sin recortes. Trámite +15 y devolución +21 días <b>hábiles (Lun–Vie)</b>.</div>
+        <div class="g-step"><b>④ DEMORAS</b>Calculadora de demurrage/detention por contenedor con <b>21 días libres hábiles</b> y factura DEM imprimible.</div>
+        <div class="g-step"><b>⑤ FILTROS Y DATOS</b>POD, Servicio, Destino (A/C), Mes y Nave/Viaje · vista ordenable y validación de cláusula.</div>
       </div>
       <div class="dropzone" id="dropZone">
         <span class="icon">📦</span>
@@ -295,6 +305,7 @@ footer b{color:var(--eg-dark)}
           <button id="viewDataBtn">🗂 Datos (ordenar)</button>
           <button id="viewOnwardBtn">🛣️ Cláusula Onward</button>
           <button id="viewAvisoBtn">📄 Aviso de Llegada</button>
+          <button id="viewCalcBtn">🧮 Demoras</button>
         </div>
         <span class="spacer"></span>
         <button class="btn btn-primary" id="btnSummary">⬇ Resumen Excel</button>
@@ -339,7 +350,7 @@ footer b{color:var(--eg-dark)}
       </div>
 
       <div id="avisoView" style="display:none">
-        <div class="clause-note">📄 AVISO DE LLEGADA — PDF en UNA hoja A4, sin recortes. Escribe el BL o genera masivo por NAVE (ZIP).</div>
+        <div class="clause-note">📄 AVISO DE LLEGADA — PDF en UNA hoja A4, sin recortes. Escribe el BL o genera masivo por NAVE (ZIP). Trámite +15 · devolución +21 días <b>hábiles (Lun–Vie)</b>.</div>
         <div class="data-tools">
           <input class="bl-input" id="blInput" list="blList" placeholder="N° DE BL · ej. 140601147622" autocomplete="off">
           <datalist id="blList"></datalist>
@@ -351,6 +362,22 @@ footer b{color:var(--eg-dark)}
         </div>
         <div class="status" id="avisoStatus"></div>
         <div id="avisoWrap" style="display:none;margin-top:14px;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:auto;background:#fff"><div id="avisoPage" data-aviso-pdf></div></div>
+      </div>
+
+      <div id="calcView" style="display:none">
+        <div class="clause-note">🧮 CALCULADORA DE DEMORAS Y ESTADÍAS — Días libres = <b>días hábiles (Lun–Vie)</b>. La Fecha Límite de Devolución = Fecha de Descarga + días libres hábiles. La demora = días calendario entre el límite y la devolución real (o la fecha de hoy).</div>
+        <div class="calc-conf">
+          <label>Tarifa 20'/día</label><input type="number" id="demRate20" value="55" min="0">
+          <label>Tarifa 40'/día</label><input type="number" id="demRate40" value="110" min="0">
+          <label>Días libres hábiles</label><input type="number" id="demFree" value="21" min="0">
+          <label>Buscar BL</label><input class="bl-input" id="calcBl" list="blList" placeholder="N° DE BL…" autocomplete="off" style="max-width:200px;min-width:0">
+          <button class="btn btn-primary" id="btnCalcLoad">📥 Cargar BL</button>
+          <button class="btn btn-ghost" id="btnCalcAdd">＋ Contenedor</button>
+          <button class="btn btn-lime" id="btnCalcInv">🖨️ Imprimir factura</button>
+        </div>
+        <div class="stats" id="calcStats"></div>
+        <div class="table-wrap" id="calcTableBox"></div>
+        <div class="status" id="calcStatus"></div>
       </div>
 
       <div id="dataView" style="display:none">
@@ -377,11 +404,20 @@ var state={sheets:{},order:[],baseSheet:null,records:[],fileName:"",
   d:{active:null,sortCol:0,sortDir:1,term:"",view:[]},
   f:{pod:"__all",serv:"__all",dest:"__all",month:"__all",vessel:"__all"}};
 var charts={};
+var dem={rows:[],totals:{dem:0,cost:0}};
 function $(id){return document.getElementById(id);}
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 function isNum(v){return typeof v==="number"||(typeof v==="string"&&v.trim()!==""&&!isNaN(Number(v)));}
 function toNum(v){return isNum(v)?Number(v):0;}
 function pad2(n){return String(n).padStart(2,"0");}
+function fmtD(d){return (d instanceof Date&&!isNaN(d))?(pad2(d.getDate())+"/"+pad2(d.getMonth()+1)+"/"+d.getFullYear()):"—";}
+function isoLocal(d){return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());}
+/* Suma n días HÁBILES (Lun–Vie), saltando fines de semana. */
+function addWorkingDays(start,n){var d=new Date(start.getTime()),added=0;while(added<n){d.setDate(d.getDate()+1);var g=d.getDay();if(g!==0&&g!==6)added++;}return d;}
+function calDays(a,b){return Math.round((b-a)/86400000);}
+/* Días libres hábiles configurados en la pestaña Demoras (default 21). */
+function demFreeDays(){var v=$("demFree")?parseInt($("demFree").value,10):NaN;return isNaN(v)||v<0?21:v;}
+function demRate(tipo){var id=tipo==="20'"?"demRate20":"demRate40",def=tipo==="20'"?55:110;var v=$(id)?parseFloat($(id).value):NaN;return isNaN(v)||v<0?def:v;}
 function normYear(y){y=+y;if(y<100)y+=2000;return y;}
 function parseDate(v){
   if(v instanceof Date&&!isNaN(v)){var yy=v.getFullYear();if(yy<100)return new Date(yy+2000,v.getMonth(),v.getDate());return v;}
@@ -399,6 +435,7 @@ function normDest(ac){var s=String(ac||"").trim().toUpperCase();
   if(s.indexOf("AE")===0||s.indexOf("AR")===0)return "ARGENTINA";if(s.indexOf("PE")===0)return "PERU";return "OTROS";}
 function setStatus(m,t){var b=$("statusBox");b.textContent=m||"";b.className="status "+(t||"");}
 function setAvisoStatus(m,t){var b=$("avisoStatus");b.textContent=m||"";b.className="status "+(t||"");}
+function setCalcStatus(m,t){var b=$("calcStatus");b.textContent=m||"";b.className="status "+(t||"");}
 function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e;}
 
 var LOGO_SVG='<img alt="Evergreen" src="data:image/png;base64,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">';
@@ -445,6 +482,7 @@ function buildRecords(){
     var vsl=String(col(row,"vslvoy")).trim().toUpperCase();
     if(!vsl)vsl=(String(col(row,"nave principal")).trim()+" "+String(col(row,"viaje")).trim()).trim().toUpperCase();
     state.records.push({ir:String(col(row,"bl")!==""?col(row,"bl"):col(row,"ir")),
+      contNums:String(col(row,"contenedores")).trim(),
       cons:String(col(row,"consignatario")).trim(),pod:pod,pol:pol,serv:normServ(col(row,"servicio")),ac:ac,dest:normDest(ac),
       c20:toNum(col(row,"20sd")),c40sd:toNum(col(row,"40sd")),c40sh:toNum(col(row,"40sh")),
       nave:String(col(row,"nave principal")).trim(),viaje:String(col(row,"viaje")).trim(),
@@ -595,8 +633,9 @@ function buildAviso(r){
   var n20=r.c20,n40sd=r.c40sd,n40sh=r.c40sh,n40=n40sd+n40sh;
   var thc=160*n20+230*n40,vbF=120*n20+200*n40,vbD=150*n20+200*n40,adm=60*n20+120*n40;
   var arr=(r.pod==="ARICA"?r.arrA:r.arrI)||r.arrI||r.arrA||r.eta;
-  var maxTram=arr?new Date(arr.getTime()+15*864e5):null;
-  var maxDev=arr?new Date(arr.getTime()+21*864e5):null;
+  var freeDays=demFreeDays();
+  var maxTram=arr?addWorkingDays(arr,15):null;   /* trámite: +15 días hábiles */
+  var maxDev=arr?addWorkingDays(arr,freeDays):null; /* devolución: +21 días hábiles */
   var emisTxt=r.emis||"EMISION EN DESTINO";
   if(((r.emisDest||"").toLowerCase()==="sí")||((r.emisDest||"").toLowerCase()==="si"))emisTxt+="&nbsp;&nbsp;(Puede solicitar a su embarcador emisión en destino)";
   var clause=String(r.onward||"").toUpperCase();
@@ -611,7 +650,7 @@ function buildAviso(r){
   h+='<div class="flex-row"><span class="fl">EGLV'+r.ir+'</span><span class="fc">Que arribo al puerto : '+r.pod+', CHILE</span><span class="fr">Nave servicio principal: '+naveTxt+'</span></div>';
   h+='<div class="row-feeder"><span class="l"></span><span class="c">ETA POD: '+(arr?(pad2(arr.getDate())+"/"+pad2(arr.getMonth()+1)+"/"+arr.getFullYear()):"—")+' (Sujeta a conexión con el feeder)</span><span class="r">Nave Feeder; '+(r.feeder||"—")+'</span></div>';
   h+='<div class="vertical-equip"><div>20\' SD → '+n20+'</div><div>40\' SD → '+n40sd+'</div><div>40\' SH → '+n40sh+'</div></div>';
-  h+='<p>Fecha maxima de trámite de liberación/desconsolidación sin pago de sobrestadía anticipada: <span class="lbl">'+(maxTram?(pad2(maxTram.getDate())+"/"+pad2(maxTram.getMonth()+1)+"/"+maxTram.getFullYear()):"—")+'</span></p>';
+  h+='<p>Fecha maxima de trámite de liberación/desconsolidación sin pago de sobrestadía anticipada: <span class="lbl">'+fmtD(maxTram)+'</span></p>';
   h+='<p>Así mismo nuestro sistema muestra que el BL: <span class="lbl">'+emisTxt+'</span></p>';
   h+='<p>El BL indica la premisa: <span class="green">'+premisa+'</span></p>';
   h+='<p>Solicitamos enviar el NIT de su empresa escaneado por este medio y C.I. del Representante Legal</p>';
@@ -708,6 +747,117 @@ $("btnZipAviso").addEventListener("click",function(){
   .catch(function(err){console.error(err);setAvisoStatus("⚠ Error generando el ZIP: "+(err&&err.message||err),"err");})
   .then(function(){btn.disabled=false;});});
 
+/* ===== DEMORAS · Demurrage / Detention (días libres HÁBILES Lun–Vie) ===== */
+function escAttr(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");}
+function money(n){return Number(n||0).toLocaleString("es",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function calcRow(row){
+  var free=demFreeDays(),rate=demRate(row.tipo);
+  var limit=addWorkingDays(row.desc,free);
+  var today=new Date();today.setHours(0,0,0,0);
+  var end=row.dev||today;
+  var dias=Math.max(0,calDays(row.desc,end));
+  var demora=Math.max(0,calDays(limit,end));
+  var cost=demora*rate;
+  var rest=calDays(today,limit);
+  var est;
+  if(row.dev){est=demora>0?"🔴 Con demora":"🟢 Devuelto a tiempo";}
+  else if(rest<0){est="🔴 VENCIDO ("+(-rest)+" d)";}
+  else if(rest<=5){est="🟡 POR VENCER ("+rest+" d)";}
+  else{est="🟢 EN PLAZO ("+rest+" d)";}
+  return{limit:limit,dias:dias,demora:demora,cost:cost,rate:rate,est:est,fin:row.dev?{dem:demora,c:cost}:null};
+}
+function renderCalc(){
+  var box=$("calcTableBox");if(!box)return;
+  if(!dem.rows.length){
+    box.innerHTML='<p style="padding:14px;color:var(--muted);font-size:12px">Escribe un BL y pulsa <b>Cargar BL</b>, o usa <b>＋ Contenedor</b> para empezar.</p>';
+    $("calcStats").innerHTML="";dem.totals={dem:0,cost:0};return;}
+  var totDem=0,totCost=0,inDem=0,okN=0;
+  var heads=["N°","Contenedor","Tipo","Fecha Descarga","Límite Devolución","Devolución Real","Días","Demora","Costo Actual","Demora Final","Costo Final","Estado",""];
+  var h='<table class="calc-table"><thead><tr>';
+  heads.forEach(function(x){h+='<th>'+x+'</th>';});
+  h+='</tr></thead><tbody>';
+  dem.rows.forEach(function(row,i){
+    var c=calcRow(row);totDem+=c.demora;totCost+=c.cost;if(c.demora>0)inDem++;else okN++;
+    h+='<tr>';
+    h+='<td>'+(i+1)+'</td>';
+    h+='<td><input value="'+escAttr(row.num)+'" data-i="'+i+'" data-f="num" style="width:130px"></td>';
+    h+='<td><select data-i="'+i+'" data-f="tipo"><option value="20\'"'+(row.tipo==="20'"?" selected":"")+'>20\'</option><option value="40\'"'+(row.tipo==="40'"?" selected":"")+'>40\'</option></select></td>';
+    h+='<td><input type="date" value="'+(row.desc?isoLocal(row.desc):"")+'" data-i="'+i+'" data-f="desc"></td>';
+    h+='<td style="font-weight:bold">'+fmtD(c.limit)+'</td>';
+    h+='<td><input type="date" value="'+(row.dev?isoLocal(row.dev):"")+'" data-i="'+i+'" data-f="dev"></td>';
+    h+='<td>'+c.dias+'</td>';
+    h+='<td style="font-weight:bold">'+c.demora+'</td>';
+    h+='<td style="font-weight:bold">USD '+money(c.cost)+'</td>';
+    h+='<td>'+(c.fin?c.fin.dem:"—")+'</td>';
+    h+='<td>'+(c.fin?("USD "+money(c.fin.c)):"—")+'</td>';
+    h+='<td>'+c.est+'</td>';
+    h+='<td><button class="calc-del" data-del="'+i+'">✕</button></td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  box.innerHTML=h;
+  box.querySelectorAll("input,select").forEach(function(inp){inp.addEventListener("change",function(){
+    var i=+this.dataset.i,f=this.dataset.f;
+    if(f==="desc"){dem.rows[i].desc=this.value?parseDate(this.value):new Date();}
+    else if(f==="dev"){dem.rows[i].dev=this.value?parseDate(this.value):null;}
+    else{dem.rows[i][f]=this.value;}
+    renderCalc();
+  });});
+  box.querySelectorAll("button[data-del]").forEach(function(b){b.addEventListener("click",function(){
+    dem.rows.splice(+this.dataset.del,1);renderCalc();
+  });});
+  $("calcStats").innerHTML="";
+  [["Contenedores: "+dem.rows.length],["Días en demora: "+totDem],["En demora: "+inDem],["Sin demora: "+okN],["COSTO ACUMULADO: USD "+money(totCost)]]
+    .forEach(function(s){$("calcStats").appendChild(el("span","stat",s[0]));});
+  dem.totals={dem:totDem,cost:totCost};
+}
+$("btnCalcLoad").addEventListener("click",function(){
+  var q=$("calcBl").value.trim();if(!q){setCalcStatus("⚠ Ingresa un BL.","err");return;}
+  var r=null;state.records.forEach(function(x){if(!r&&String(x.ir).trim()===q)r=x;});
+  if(!r){setCalcStatus("⚠ BL no encontrado.","err");return;}
+  var desc=(r.pod==="ARICA"?r.arrA:r.arrI)||r.arrI||r.arrA||r.eta||new Date();
+  var nums=(r.contNums||"").split(/[,;|\n]+/).map(function(s){return s.trim();}).filter(Boolean);
+  dem.rows=[];dem.bl=q;var i;
+  for(i=0;i<r.c20;i++)dem.rows.push({num:nums.shift()||"",tipo:"20'",desc:new Date(desc.getTime()),dev:null});
+  for(i=0;i<r.c40sd+r.c40sh;i++)dem.rows.push({num:nums.shift()||"",tipo:"40'",desc:new Date(desc.getTime()),dev:null});
+  if(!dem.rows.length)dem.rows.push({num:nums.shift()||"",tipo:"40'",desc:new Date(desc.getTime()),dev:null});
+  renderCalc();
+  setCalcStatus("✔ "+dem.rows.length+" contenedor(es) del BL "+q+" · fecha de descarga "+fmtD(desc)+".","ok");
+});
+$("btnCalcAdd").addEventListener("click",function(){
+  dem.rows.push({num:"",tipo:"40'",desc:new Date(),dev:null});renderCalc();
+});
+["demRate20","demRate40","demFree"].forEach(function(id){$(id).addEventListener("input",function(){if($("calcView").style.display!=="none")renderCalc();});});
+$("btnCalcInv").addEventListener("click",function(){
+  if(!dem.rows.length){setCalcStatus("⚠ No hay contenedores para facturar.","err");return;}
+  var t=dem.totals||{cost:0};
+  var transfer=t.cost*0.08+35,total=t.cost+transfer;
+  var bl=(dem.bl||$("calcBl").value.trim())||"—";
+  var free=demFreeDays(),rows="";
+  dem.rows.forEach(function(row){var c=calcRow(row);
+    rows+='<tr><td>'+escAttr(row.num||"—")+'</td><td>'+row.tipo+'</td><td>Demurrage / Detention</td><td>'+free+'</td><td>'+fmtD(row.desc)+'</td><td>'+(row.dev?fmtD(row.dev):"hoy")+'</td><td>'+c.demora+'</td><td>USD '+money(c.rate)+'</td><td>USD '+money(c.cost)+'</td></tr>';
+  });
+  var html='<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;padding:24px;color:#000">'
+   +'<h2 style="margin:0 0 4px">SERVICIOS DE TRANSPORTE MARITIMO EVERBOL SHIPPING S.R.L.</h2>'
+   +'<p style="margin:2px 0">NIT 676271028 · Nota de cobro N° <b>DEM-'+escAttr(bl)+'</b> · 4to Anillo, Torre DUO Piso 8 of 8A, Santa Cruz</p>'
+   +'<p style="margin:2px 0 10px">Referencia BL: <b>EGLV'+escAttr(bl)+'</b> · Días libres: '+free+' hábiles (Lun–Vie)</p>'
+   +'<table border="1" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:11px">'
+   +'<thead><tr><th>Contenedor</th><th>Tipo</th><th>Concepto</th><th>Días libres</th><th>Fecha inicio</th><th>Fecha fin</th><th>Días a cobrar</th><th>Tarifa/día</th><th>Subtotal</th></tr></thead><tbody>'
+   +rows
+   +'<tr><td colspan="8" style="text-align:right"><b>SUBTOTAL</b></td><td><b>USD '+money(t.cost)+'</b></td></tr>'
+   +'<tr><td colspan="8" style="text-align:right">Costo transferencia (8% + USD 35)</td><td>USD '+money(transfer)+'</td></tr>'
+   +'<tr><td colspan="8" style="text-align:right"><b>TOTAL A PAGAR</b></td><td><b>USD '+money(total)+'</b></td></tr>'
+   +'</tbody></table>'
+   +'<p style="margin:10px 0 2px"><b>DATOS BANCARIOS PERÚ:</b> Titular SERVICIOS DE TRANSPORTE MARITIMO EVERBOL SHIPPING S.R.L. · Cta USD 191-7231355-1-98 · CCI 002 191 007231355198 57 · BANCO DE CRÉDITO DEL PERÚ · Swift BCPLPEPL · Comisión USD 35.</p>'
+   +'<p style="margin:2px 0"><b>DATOS BANCARIOS BOLIVIA:</b> Titular SERVICIOS DE TRANSPORTE MARITIMO EVERBOL SHIPPING S.R.L. · Cta Bolivianos 701-5102373-3-58 · BCP · NIT 676271028 · (USD + 8% + USD 35) * T/C oficial.</p>'
+   +'</div>';
+  var w=window.open("","_blank");
+  if(!w){setCalcStatus("⚠ Habilita las ventanas emergentes para imprimir la factura.","err");return;}
+  w.document.write('<html><head><meta charset="UTF-8"><title>FACTURA DEM-'+escAttr(bl)+'</title></head><body>'+html+'</body></html>');
+  w.document.close();w.focus();setTimeout(function(){w.print();},300);
+  setCalcStatus("✔ Factura DEM-"+bl+" generada.","ok");
+});
+
 /* ===== FILTROS ===== */
 function fillFilters(){
   var pods={},servs={},dests={},vsls={},months={};
@@ -725,16 +875,17 @@ function fillFilters(){
   state.f.pod=$("selPOD").value;state.f.serv=$("selServ").value;state.f.dest=$("selDest").value;state.f.month=$("selMonth").value;state.f.vessel=$("selVessel").value;
   refreshDashboard();refreshVessel();refreshOnward();});});
 function showView(v){
-  ["Dash","Vessel","Data","Onward","Aviso"].forEach(function(k){$("view"+k+"Btn").classList.toggle("active",k.toLowerCase()===v);});
+  ["Dash","Vessel","Data","Onward","Aviso","Calc"].forEach(function(k){$("view"+k+"Btn").classList.toggle("active",k.toLowerCase()===v);});
   $("dashView").style.display=v==="dash"?"":"none";$("vesselView").style.display=v==="vessel"?"":"none";
   $("dataView").style.display=v==="data"?"":"none";$("onwardView").style.display=v==="onward"?"":"none";
-  $("avisoView").style.display=v==="aviso"?"":"none";
-  if(v==="data")renderDataAll();if(v==="vessel")refreshVessel();if(v==="onward")refreshOnward();}
+  $("avisoView").style.display=v==="aviso"?"":"none";$("calcView").style.display=v==="calc"?"":"none";
+  if(v==="data")renderDataAll();if(v==="vessel")refreshVessel();if(v==="onward")refreshOnward();if(v==="calc")renderCalc();}
 $("viewDashBtn").addEventListener("click",function(){showView("dash");});
 $("viewVesselBtn").addEventListener("click",function(){showView("vessel");});
 $("viewDataBtn").addEventListener("click",function(){showView("data");});
 $("viewOnwardBtn").addEventListener("click",function(){showView("onward");});
 $("viewAvisoBtn").addEventListener("click",function(){showView("aviso");});
+$("viewCalcBtn").addEventListener("click",function(){showView("calc");});
 /* ===== DATA ===== */
 function renderDataAll(){if(!state.order.length)return;
   if(!state.d.active||!state.sheets[state.d.active]){state.d.active=state.baseSheet||state.order[0];setDefaultSort();}
@@ -794,7 +945,8 @@ $("btnSummary").addEventListener("click",function(){
 $("btnReset").addEventListener("click",function(){
   Object.keys(charts).forEach(function(k){charts[k].destroy();delete charts[k];});
   state={sheets:{},order:[],baseSheet:null,records:[],fileName:"",d:{active:null,sortCol:0,sortDir:1,term:"",view:[]},f:{pod:"__all",serv:"__all",dest:"__all",month:"__all",vessel:"__all"}};
-  $("fileInput").value="";$("appCard").style.display="none";$("uploadCard").style.display="";setStatus("");setAvisoStatus("");});
+  dem={rows:[],totals:{dem:0,cost:0}};$("calcBl").value="";
+  $("fileInput").value="";$("appCard").style.display="none";$("uploadCard").style.display="";setStatus("");setAvisoStatus("");setCalcStatus("");});
 function fillBlList(){var dl=$("blList");dl.innerHTML="";
   state.records.slice(0,900).forEach(function(r){var o=document.createElement("option");o.value=r.ir;dl.appendChild(o);});}
 function fillNaves(){var map={};state.records.forEach(function(r){var n=r.vsl||"(SIN NAVE)";map[n]=(map[n]||0)+1;});
@@ -804,8 +956,9 @@ function fillNaves(){var map={};state.records.forEach(function(r){var n=r.vsl||"
 function afterLoad(){buildRecords();fillFilters();fillBlList();fillNaves();
   $("fileChip").textContent="📄 "+state.fileName;
   $("uploadCard").style.display="none";$("appCard").style.display="";
+  dem={rows:[],totals:{dem:0,cost:0}};
   showView("dash");refreshDashboard();refreshVessel();refreshOnward();
-  setStatus("✔ Archivo cargado ("+state.records.length+" registros). Aviso en 1 hoja A4 sin recortes.","ok");}
+  setStatus("✔ Archivo cargado ("+state.records.length+" registros). Aviso y Demoras con días libres hábiles (Lun–Vie).","ok");}
 })();
 </script>
 <script id="aviso-pdf-fix-js">

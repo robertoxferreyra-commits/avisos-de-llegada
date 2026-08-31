@@ -27,9 +27,9 @@ is required for the page to function.
 
 - `<style>` blocks: main theme (Evergreen green palette via CSS vars), `#avisoCss` (the A4
   arrival-notice layout — fixed 794px width, mm units for print), and `#aviso-pdf-fix-css`.
-- **Main IIFE** (`<script>` starting ~line 372): the whole application. Everything hangs off a
+- **Main IIFE** (`<script>` starting ~line 372): the whole application. Most of it hangs off a
   single `state` object (`sheets`, `baseSheet`, `records`, `d` = data-view state, `f` = active
-  filters).
+  filters); the Demoras tab keeps its own `dem` object.
 - **Second IIFE** (`#aviso-pdf-fix-js`, ~line 805): defines `window.avisoPdfFix`, an
   alternative PDF exporter. The visible "⬇️ PDF" button is wired to it via inline
   `onclick="avisoPdfFix(event)"` (line ~349), *not* to `#btnPdfAviso`'s own handler. So there
@@ -48,10 +48,12 @@ is required for the page to function.
 - **`buildRecords()`**: maps base-sheet columns into record objects **by lowercased header
   text** (`H[header.toLowerCase()] → column index`). This is the main fragility: renaming a
   column in the source XLSX silently drops that field. Expected columns include: `bl`/`ir`,
-  `consignatario`, `pod`, `pol`, `servicio`, `a/c`, `20sd`, `40sd`, `40sh`, `nave principal`,
-  `viaje`, `vslvoy`, `feeder`, `arribo arica`, `arribo iquique`, `eta pod`, `emision`,
-  `emision destino`, `onward inland routing`.
-- Derived per record: `cont(r)` = 20+40sd+40sh; `teus(r)` = 20 + (40sd+40sh)*2;
+  `contenedores` (container numbers, comma/`;`/`|`/newline-separated → record field
+  `contNums`), `consignatario`, `pod`, `pol`, `servicio`, `a/c`, `20sd`, `40sd`, `40sh`,
+  `nave principal`, `viaje`, `vslvoy`, `feeder`, `arribo arica`, `arribo iquique`, `eta pod`,
+  `emision`, `emision destino`, `onward inland routing`.
+- Derived per record: `cont(r)` = 20+40sd+40sh (a function — distinct from the `contNums`
+  string field); `teus(r)` = 20 + (40sd+40sh)*2;
   `trade` = `"WS"` if POL contains `BUENAVENTURA` else `"FE"`; `dest` via `normDest()` which
   maps the `a/c` field's country prefix (BO→BOLIVIA, CL→CHILE, etc.).
 - `parseDate()` handles Excel serials, Date objects, and several string formats; two-digit
@@ -71,8 +73,11 @@ tables (shifted text, phantom green header bleed). Keep new columns out of spann
 Business rules are **hardcoded** here and must be edited in place:
 
 - Fee formulas, e.g. `thc = 160*n20 + 230*n40`, `vbF = 120*n20 + 200*n40`, admin/BL fees.
-- Deadlines: `arribo + 15 days` = free-time / trámite deadline; `arribo + 21 days` = max
-  container return date.
+- Deadlines are **business days** (`addWorkingDays`, skips Sat/Sun): `arribo + 15 working
+  days` = trámite deadline; `arribo + <demFreeDays()> working days` (default 21) = container
+  return date. `demFreeDays()` reads the `#demFree` input on the Demoras tab, so changing the
+  free-days there also moves the Aviso's devolución date — kept intentionally consistent with
+  the Demoras calculator.
 - Bank details (Banco BCP Bolivianos account, Banco Santander Chile), Everbol Shipping
   S.R.L. NIT, contact emails, and the Santa Cruz office address are literal strings in the
   template.
@@ -99,6 +104,26 @@ button's inline `onclick="avisoPdfFix(event)"` calls `stopImmediatePropagation()
 `clauseStatus()` / `refreshOnward()` validate that BOLIVIA-destined records carry a
 "CARGO IN TRANSIT TO BOLIVIA" (or Spanish/partial variants) clause in `onward inland routing`,
 flagging each row ok / review / missing.
+
+## Demoras (demurrage/detention) — `🧮 Demoras` tab (`#calcView`)
+
+Per-container overdue-days + cost calculator. State in `dem = {rows, totals, bl}`.
+
+- `btnCalcLoad`: looks up the BL, splits `r.contNums` into container numbers, and creates one
+  `dem.rows` entry per 20' and per 40' container (`{num, tipo, desc, dev}`), `desc` =
+  discharge date (arrival at POD).
+- `calcRow(row)`: `limit = addWorkingDays(desc, demFreeDays())`; `demora = max(0, calendar
+  days between limit and (dev || today))`; `cost = demora * demRate(tipo)` (`demRate20`/
+  `demRate40` inputs, default 55/110). Status: EN PLAZO / POR VENCER (≤5 d) / VENCIDO /
+  Con demora / Devuelto a tiempo.
+- `renderCalc()` builds the editable table (inline `data-i`/`data-f` inputs, event
+  delegation, re-renders on every change) and the stat chips; empty `dem.rows` shows a hint.
+- `btnCalcInv`: opens a print window with a "DEM-<BL>" invoice — line per container, subtotal,
+  `+8% + USD 35` transfer fee, total, and hardcoded Perú (BCP USD) + Bolivia (BCP Bs) bank
+  details.
+- `escAttr()` / `money()` are Demoras-local helpers; date helpers `fmtD` / `isoLocal` /
+  `addWorkingDays` / `calDays` live with the other top-of-IIFE helpers and are shared with
+  `buildAviso`.
 
 ## Conventions
 
