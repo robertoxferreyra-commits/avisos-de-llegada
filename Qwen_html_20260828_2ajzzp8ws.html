@@ -816,6 +816,7 @@ function afterLoad(){buildRecords();fillFilters();fillBlList();fillNaves();
   const A4_PAGE_W_MM = 210;
   const A4_PAGE_H_MM = 297;
   const A4_WIDTH_PX = 794;
+  const PAGE_MARGIN_MM = 10; // white margin around the sheet in the exported PDF
 
   window.avisoPdfFix = async function (event) {
     if (event) {
@@ -891,20 +892,20 @@ function afterLoad(){buildRecords();fillFilters();fillBlList();fillNaves();
 
       const imgData = canvas.toDataURL("image/png");
 
-      // Fit full preview into ONE A4 page, without cropping
-      const baseWidthMm = A4_PAGE_W_MM;
-      let imgHeightMm = canvas.height * baseWidthMm / canvas.width;
+      // Fit full preview into ONE A4 page, without cropping, keeping a page margin
+      const availWidthMm = A4_PAGE_W_MM - PAGE_MARGIN_MM * 2;
+      const availHeightMm = A4_PAGE_H_MM - PAGE_MARGIN_MM * 2;
 
-      let finalWidthMm = baseWidthMm;
-      let finalHeightMm = imgHeightMm;
+      let finalWidthMm = availWidthMm;
+      let finalHeightMm = canvas.height * finalWidthMm / canvas.width;
 
-      if (imgHeightMm > A4_PAGE_H_MM) {
-        finalHeightMm = A4_PAGE_H_MM;
-        finalWidthMm = canvas.width * A4_PAGE_H_MM / canvas.height;
+      if (finalHeightMm > availHeightMm) {
+        finalHeightMm = availHeightMm;
+        finalWidthMm = canvas.width * finalHeightMm / canvas.height;
       }
 
       const x = (A4_PAGE_W_MM - finalWidthMm) / 2;
-      const y = 0;
+      const y = PAGE_MARGIN_MM;
 
       pdf.addImage(imgData, "PNG", x, y, finalWidthMm, finalHeightMm, undefined, "FAST");
       pdf.save("aviso-de-llegada.pdf");
